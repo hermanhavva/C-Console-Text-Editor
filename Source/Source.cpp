@@ -1,7 +1,7 @@
 ﻿
 #include <stdio.h>
+#include <stdlib.h>
 
-using namespace std;
 
 // можна зробити команду 
 enum Mode
@@ -11,7 +11,8 @@ enum Mode
 	SAVETOFILE = 3,
 	LOADFROMFILE = 4,
 	PRINTCURRENT = 5,
-	INSERT = 6
+	INSERT = 6,
+	UNDEFINED = 7
 };
 void PrintMainMenu()
 {
@@ -21,8 +22,9 @@ enum Mode GetUserCommand()
 {
 	printf("Enter number: ");
 	enum Mode command;
-	char input[10];
-	scanf_s("%s", input, sizeof(input));
+	int inputSize = 10;
+	char* input = (char*)malloc(inputSize*sizeof(char));
+	scanf_s("%s", input, inputSize);
 	switch (input[0])
 	{
 	case '1':
@@ -43,15 +45,18 @@ enum Mode GetUserCommand()
 
 	default:
 		printf("The command is not implemmented");
+		command = UNDEFINED;
 		break;
 	}
+	free (input);
 	return command;
 }
 
 int main()
 {
 	PrintMainMenu();
-	printf("%d", GetUserCommand());
+	enum Mode command = GetUserCommand();
+
 	return 0; 
 
 }
