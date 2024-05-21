@@ -5,11 +5,11 @@
 #include "BufferLogic.cpp"
 
 FILE* filePtr = NULL;
-const int ROWSIZE = 1000000000;
+const int ROWSIZE = 1000;
 const int BUFFERSIZE = 256;
 const int COMMANDSIZE = 10;
 char** buffer;
-int bufferRowCounter = 0;
+int bufferRowCounter = -1;  // default value is -1 empty buffer(no rows)
 
 // треба зробити окрему іункцію котра буде виконуватися, якщо пам'ять не виділилася, 
 // ЯКИЙ СЕНС ВІД ТОГО ШОБ З ПОЧАТКУ ПРОГРАМИ ВИДІЛЯТИ ПАМ'ЯТЬ ПІД МАСИВ, ВІД ЦЬОГО НЕМА ВИГРАШУ З ТАКИМ УСПІХОМ 
@@ -29,10 +29,9 @@ BOOL WINAPI ConsoleHandler(DWORD signal)
 	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT || signal == CTRL_BREAK_EVENT ||
 		signal == CTRL_LOGOFF_EVENT || signal == CTRL_SHUTDOWN_EVENT) {
 		printf("\nProgram interrupted. Cleaning up...\n");
-		Sleep(3071);
+		Sleep(2071);
 		printf("File closed successfully.\n");
-		
-		// Perform other cleanup tasks here
+
 		if (filePtr != NULL)
 			fclose(filePtr);
 		exit(0);
@@ -44,7 +43,8 @@ void AllocFailureProgTermination()
 {
 	perror("Error allocating memory");
 	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
-	fclose(filePtr);
+	if (filePtr != NULL)
+		fclose(filePtr);
 	Sleep(1000);
 	exit(EXIT_FAILURE);
 }
@@ -55,13 +55,12 @@ void ExecuteCommand(enum Mode command)
 	{
 	case APPEND:
 	{
-		char* row = (char*)malloc(ROWSIZE * sizeof(char));  // deallocation is not needed as buffer will be freed
-		if (row == NULL) 
+		char* row = (char*)malloc(sizeof(char) * ROWSIZE);
+		if (row == NULL)
 			AllocFailureProgTermination();
 		
 		fgets(row, ROWSIZE, stdin);
-		
-		buffer[bufferRowCounter] = row;
+		strcat_s(buffer[bufferRowCounter], ROWSIZE, row);
 		break;
 	}
 	case NEWLINE:
@@ -73,7 +72,7 @@ void ExecuteCommand(enum Mode command)
 				{
 					buffer[bufferRowCounter][index] = '\n';
 					buffer[bufferRowCounter][index + 1] = '\0';
-					bufferRowCounter++;
+					AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
 					break;
 				}
 			}
@@ -148,7 +147,9 @@ int main()
 	
 
 	fgets(buffer[bufferRowCounter], ROWSIZE, stdin);
-	printf("%s\n", buffer[bufferRowCounter]);
+	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
+	fgets(buffer[bufferRowCounter], ROWSIZE, stdin);
+	printf("%s\n%s\n", buffer[0], buffer[1]);
 	
 	Sleep(3000);
 	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);

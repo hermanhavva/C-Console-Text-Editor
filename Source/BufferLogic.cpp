@@ -10,7 +10,8 @@ void InitializeBuffer(char*** buffer, int const BUFFERSIZE)  // got to check for
 
 }
 void AddRow(char*** buffer, const int BUFFERSIZE, int* bufferRowCounterPtr, const int ROWSIZE) {
-    if (*bufferRowCounterPtr >= BUFFERSIZE) {
+    if (*bufferRowCounterPtr >= BUFFERSIZE - 1) 
+    {
         printf("Buffer is full. Cannot add more rows.\n");
         return;
     }
