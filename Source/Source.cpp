@@ -2,15 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include "BufferLogic.cpp"
 
 FILE* filePtr = NULL;
-int const ROWSIZE = 100;
-int const BUFFERSIZE = 256;
-int const COMMANDSIZE = 10;
-char** buffer = (char**)malloc(BUFFERSIZE * sizeof(char*));
+const int ROWSIZE = 1000000000;
+const int BUFFERSIZE = 256;
+const int COMMANDSIZE = 10;
+char** buffer;
 int bufferRowCounter = 0;
 
-// можна зробити команду 
+// треба зробити окрему іункцію котра буде виконуватися, якщо пам'ять не виділилася, 
+// ЯКИЙ СЕНС ВІД ТОГО ШОБ З ПОЧАТКУ ПРОГРАМИ ВИДІЛЯТИ ПАМ'ЯТЬ ПІД МАСИВ, ВІД ЦЬОГО НЕМА ВИГРАШУ З ТАКИМ УСПІХОМ 
+// МОЖНА БУЛО Б ЮЗАТИ І СТАТИЧНУ ПАМ'ЯТЬ 
 enum Mode
 {
 	APPEND = 1,
@@ -36,6 +39,15 @@ BOOL WINAPI ConsoleHandler(DWORD signal)
 	}
 	return TRUE;
 }
+
+void AllocFailureProgTermination() 
+{
+	perror("Error allocating memory");
+	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
+	fclose(filePtr);
+	Sleep(1000);
+	exit(EXIT_FAILURE);
+}
 void ExecuteCommand(enum Mode command) 
 {
 	
@@ -45,13 +57,10 @@ void ExecuteCommand(enum Mode command)
 	{
 		char* row = (char*)malloc(ROWSIZE * sizeof(char));  // deallocation is not needed as buffer will be freed
 		if (row == NULL) 
-		{
-			perror("Error allocating memory");
-			free(buffer);
-			Sleep(1000);
-			exit(EXIT_FAILURE);
-		}
+			AllocFailureProgTermination();
+		
 		fgets(row, ROWSIZE, stdin);
+		
 		buffer[bufferRowCounter] = row;
 		break;
 	}
@@ -85,29 +94,9 @@ void ExecuteCommand(enum Mode command)
 	default:
 		break;
 	}
-	
-
 }
 
-void InitializeBuffer()
-{
-	for (int row = 0; row < BUFFERSIZE; row++) 
-	{
-		buffer[row] = (char*)malloc(ROWSIZE * sizeof(char));
-		if (buffer[row] != NULL) {
-			buffer[row][0] = '\0';
-		}
-		else
-		{
-			perror("Error allocating memory");
-			free(buffer);
-			Sleep(1000);
-			exit(EXIT_FAILURE);
-		}
-			
 
-	}
-}
 
 void PrintMainMenu()
 {
@@ -154,21 +143,22 @@ int main()
 		return EXIT_FAILURE;
 	}
 	
-	//PrintMainMenu();
-	//enum Mode command = GetUserCommand();
-	//ExecuteCommand(command);
-	int rowSize = 100;
-	char* row = (char*)malloc(rowSize*sizeof(char));
-	fgets(row, rowSize, stdin);
-	InitializeBuffer();
-	strcat_s(buffer[0], ROWSIZE, row);
+	InitializeBuffer(&buffer, BUFFERSIZE);
+	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
 	
+
+	fgets(buffer[bufferRowCounter], ROWSIZE, stdin);
+	printf("%s\n", buffer[bufferRowCounter]);
 	
-	printf("%s\n", buffer[0]);
-	Sleep(4000);
+	Sleep(3000);
+	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
+
+	//free(buffer);
+	//free(row);
+	//row = NULL;
+
+	Sleep(2000);
 	
-	free(buffer);
-	exit(0);
 	//free(row);
 
 	return 0; 
