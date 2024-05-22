@@ -33,3 +33,13 @@ void LoadFromFile(FILE* filePtr, char** destBuffer)
 	
 	return;
 }
+int GetTxtSize(FILE* filePtr) 
+{
+	if (filePtr == NULL)
+		return -1;
+	fseek(filePtr, 0, SEEK_END); // Move the file pointer to the end of the file
+	int fileSize = ftell(filePtr); // Get the current file pointer position, which is the size of the file
+	rewind(filePtr); // Reset the file pointer to the beginning of the file
+
+	return fileSize;
+}
