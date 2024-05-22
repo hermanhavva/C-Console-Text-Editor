@@ -6,7 +6,7 @@
 #include "BufferLogic.cpp"
 
 FILE* filePtr = NULL;
-const int ROWSIZE = 100;
+const int ROWSIZE = 150;
 const int BUFFERSIZE = 256;
 const int COMMANDSIZE = 10;
 char** buffer;
@@ -47,7 +47,7 @@ void AllocFailureProgTermination()
 
 void ExecuteCommand(enum Mode command) 
 {
-	errno_t err;
+	errno_t err;  // to track the execution of fopen_s()
 	char* input = (char*)malloc(sizeof(char) * ROWSIZE);
 	switch (command)
 	{
@@ -76,10 +76,10 @@ void ExecuteCommand(enum Mode command)
 		else
 			printf("Unable to start a new line(buffer is full)");
 		break;
-	case SAVETOFILE:  // ADD if case if user cancels the action
-		printf("\nEnter the filename(the previous text in the file will be lost): ");
-		fgets(input, ROWSIZE, stdin);  
-
+	
+	case SAVETOFILE:  // ADD in case if user cancels the action
+		printf("\nEnter the filename: ");
+		fgets(input, ROWSIZE, stdin);
 		for (int index = 0; index < ROWSIZE; index++) {
 			if (input[index] == '\n') {
 				input[index] = '\0';
@@ -95,28 +95,29 @@ void ExecuteCommand(enum Mode command)
 		WriteToFile(filePtr, buffer, BUFFERSIZE, ROWSIZE, bufferRowCounter);
 		CloseFile(filePtr); 
 		break;
+
 	case LOADFROMFILE:
 		
 		printf("\nCurrent text will be deleted, 1 - continue, 0 - cancel:\n");
-		fgets(input, sizeof(input), stdin);
+		fgets(input, ROWSIZE, stdin);
 		if (input[0] == '0')
 			break;
 
 		printf("\nEnter the filename: ");
-		fgets(input, sizeof(input), stdin);
+		fgets(input, ROWSIZE, stdin);
 		for (int index = 0; index < sizeof(input); index++) {
 			if (input[index] == '\n') {
 				input[index] = '\0';
 				break;
 			}
 		}
-		// LoadFromFile function call here
-
-		if (fopen_s(&filePtr, input, "r"))
+		err = fopen_s(&filePtr, input, "r");
+		if (err != 0 || filePtr == NULL)  // returns 0 if successful
 		{
 			printf("\nCould not open the file");
 			break;
 		}
+		// LoadFromFile function call here
 		
 		break;
 	case PRINTCURRENT:
@@ -135,7 +136,14 @@ void ExecuteCommand(enum Mode command)
 
 void PrintMainMenu()
 {
-	printf("1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current, 6 - insert\n");
+	int* curLength = (int*)malloc(sizeof(int));
+	*curLength = ROWSIZE;  // by default
+
+	if (buffer[bufferRowCounter] != NULL)
+		*curLength = ROWSIZE - strlen(buffer[bufferRowCounter]);
+
+	printf("Row size is %d symbols\nEnter your command:\n1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current, 6 - insert\n", *curLength);
+	free(curLength);
 }
 enum Mode GetUserCommand() 
 {
@@ -179,12 +187,13 @@ int main()
 	
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
-	
-	PrintMainMenu();
-	enum Mode command = GetUserCommand();
-	ExecuteCommand(command);
-	printf("%s", buffer[0]);
-	printf("%s\n", buffer[bufferRowCounter]);
+	for (int i = 0; i < 4; i++) {
+		PrintMainMenu();
+		enum Mode command = GetUserCommand();
+		ExecuteCommand(command);
+		printf("%s\n", buffer[bufferRowCounter]);
+
+	}
 	//strcpy_s(buffer[0], ROWSIZE, "hello\0");
 	//printf("%s", buffer[0]);
 	//char* text = (char*)malloc(sizeof(char)*1000);

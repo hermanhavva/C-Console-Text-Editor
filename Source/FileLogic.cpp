@@ -17,7 +17,7 @@ void WriteToFile(FILE* filePtr,
 {
 	if (filePtr != NULL && buffer[BUFFERROWCOUNTER] != NULL && BUFFERROWCOUNTER >= 0) 
 	{
-		int textSize = sizeof(char) * ROWSIZE * BUFFERROWCOUNTER + 10;
+		int textSize = sizeof(char)*256*256;
 		char* textToWrite = (char*)malloc(textSize);
 		textToWrite[0] = '\0';
 
@@ -29,5 +29,7 @@ void WriteToFile(FILE* filePtr,
 }
 void LoadFromFile(FILE* filePtr, char** destBuffer)
 {
+	
+	
 	return;
 }
