@@ -29,8 +29,7 @@ BOOL WINAPI ConsoleHandler(DWORD signal)
 	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT || signal == CTRL_BREAK_EVENT ||
 		signal == CTRL_LOGOFF_EVENT || signal == CTRL_SHUTDOWN_EVENT) {
 		printf("\nProgram interrupted. Cleaning up...\n");
-		Sleep(2071);
-		printf("File closed successfully.\n");
+		Sleep(1000);
 
 		if (filePtr != NULL)
 			fclose(filePtr);
@@ -50,19 +49,20 @@ void AllocFailureProgTermination()
 }
 void ExecuteCommand(enum Mode command) 
 {
-	
+	char* row = (char*)malloc(sizeof(char) * ROWSIZE);
 	switch (command)
 	{
 	case APPEND:
-	{
-		char* row = (char*)malloc(sizeof(char) * ROWSIZE);
+	
+		
 		if (row == NULL)
 			AllocFailureProgTermination();
 		
 		fgets(row, ROWSIZE, stdin);
 		strcat_s(buffer[bufferRowCounter], ROWSIZE, row);
+
 		break;
-	}
+	
 	case NEWLINE:
 		if (bufferRowCounter < BUFFERSIZE - 1)
 		{
@@ -93,6 +93,7 @@ void ExecuteCommand(enum Mode command)
 	default:
 		break;
 	}
+	free(row);
 }
 
 
@@ -107,8 +108,7 @@ enum Mode GetUserCommand()
 	enum Mode command;
 	
 	char* input = (char*)malloc(COMMANDSIZE*sizeof(char));
-	scanf_s("%s", input, COMMANDSIZE);
-	Sleep(12112);
+	fgets(input, COMMANDSIZE, stdin);
 	switch (input[0])
 	{
 	case '1':
@@ -145,13 +145,12 @@ int main()
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
 	
-
-	fgets(buffer[bufferRowCounter], ROWSIZE, stdin);
-	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
-	fgets(buffer[bufferRowCounter], ROWSIZE, stdin);
-	printf("%s\n%s\n", buffer[0], buffer[1]);
+	//PrintMainMenu();
+	enum Mode command = GetUserCommand();
+	ExecuteCommand(command);
+	printf("%s", buffer[0]);
+	//printf("%s\n", buffer[bufferRowCounter]);
 	
-	Sleep(3000);
 	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
 
 	//free(buffer);
