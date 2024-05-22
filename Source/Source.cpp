@@ -136,14 +136,8 @@ void ExecuteCommand(enum Mode command)
 
 void PrintMainMenu()
 {
-	int* curLength = (int*)malloc(sizeof(int));
-	*curLength = ROWSIZE;  // by default
-
-	if (buffer[bufferRowCounter] != NULL)
-		*curLength = ROWSIZE - strlen(buffer[bufferRowCounter]);
-
-	printf("Row size is %d symbols\nEnter your command:\n1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current, 6 - insert\n", *curLength);
-	free(curLength);
+	int curLength = GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE);
+	printf("Row size is %d symbols\nEnter your command:\n1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current, 6 - insert\n", curLength);
 }
 enum Mode GetUserCommand() 
 {
@@ -169,7 +163,7 @@ enum Mode GetUserCommand()
 	case '5':
 		command = PRINTCURRENT;
 		break;
-	default:
+	default:  // here we need to check for exit
 		printf("The command is not implemmented");
 		command = UNDEFINED;
 		break;

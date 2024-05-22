@@ -35,4 +35,11 @@ void FreeBuffer(char** buffer, const int BUFFERSIZE, const int ROWSIZE)
 	}
 	free(buffer);
 }
-
+int GetRowRemainLength(char** buffer, const int CURROW, const int ROWSIZE) 
+{
+    int curLength = ROWSIZE;  // by default
+    if (buffer[CURROW] != NULL)
+        curLength = ROWSIZE - strlen(buffer[CURROW]);
+    
+    return curLength;
+}
