@@ -2,18 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include "FileLogic.cpp"
 #include "BufferLogic.cpp"
 
 FILE* filePtr = NULL;
-const int ROWSIZE = 1000;
+const int ROWSIZE = 100;
 const int BUFFERSIZE = 256;
 const int COMMANDSIZE = 10;
 char** buffer;
 int bufferRowCounter = -1;  // default value is -1 empty buffer(no rows)
 
-// треба зробити окрему іункцію котра буде виконуватися, якщо пам'ять не виділилася, 
-// ЯКИЙ СЕНС ВІД ТОГО ШОБ З ПОЧАТКУ ПРОГРАМИ ВИДІЛЯТИ ПАМ'ЯТЬ ПІД МАСИВ, ВІД ЦЬОГО НЕМА ВИГРАШУ З ТАКИМ УСПІХОМ 
-// МОЖНА БУЛО Б ЮЗАТИ І СТАТИЧНУ ПАМ'ЯТЬ 
 enum Mode
 {
 	APPEND = 1,
@@ -42,25 +40,23 @@ void AllocFailureProgTermination()
 {
 	perror("Error allocating memory");
 	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
-	if (filePtr != NULL)
-		fclose(filePtr);
+	CloseFile(filePtr);
 	Sleep(1000);
 	exit(EXIT_FAILURE);
 }
+
 void ExecuteCommand(enum Mode command) 
 {
-	char* row = (char*)malloc(sizeof(char) * ROWSIZE);
+	errno_t err;
+	char* input = (char*)malloc(sizeof(char) * ROWSIZE);
 	switch (command)
 	{
 	case APPEND:
-	
-		
-		if (row == NULL)
+		if (input == NULL)
 			AllocFailureProgTermination();
 		
-		fgets(row, ROWSIZE, stdin);
-		strcat_s(buffer[bufferRowCounter], ROWSIZE, row);
-
+		fgets(input, ROWSIZE, stdin);
+		strcat_s(buffer[bufferRowCounter], ROWSIZE, input);
 		break;
 	
 	case NEWLINE:
@@ -80,9 +76,48 @@ void ExecuteCommand(enum Mode command)
 		else
 			printf("Unable to start a new line(buffer is full)");
 		break;
-	case SAVETOFILE:
+	case SAVETOFILE:  // ADD if case if user cancels the action
+		printf("\nEnter the filename(the previous text in the file will be lost): ");
+		fgets(input, ROWSIZE, stdin);  
+
+		for (int index = 0; index < ROWSIZE; index++) {
+			if (input[index] == '\n') {
+				input[index] = '\0';
+				break;
+			}
+		}
+		err = fopen_s(&filePtr, input, "a+");
+		if (err != 0 || filePtr == NULL)  // returns 0 if successful
+		{
+			printf("\nCould not open the file");
+			break;
+		}
+		WriteToFile(filePtr, buffer, BUFFERSIZE, ROWSIZE, bufferRowCounter);
+		CloseFile(filePtr); 
 		break;
 	case LOADFROMFILE:
+		
+		printf("\nCurrent text will be deleted, 1 - continue, 0 - cancel:\n");
+		fgets(input, sizeof(input), stdin);
+		if (input[0] == '0')
+			break;
+
+		printf("\nEnter the filename: ");
+		fgets(input, sizeof(input), stdin);
+		for (int index = 0; index < sizeof(input); index++) {
+			if (input[index] == '\n') {
+				input[index] = '\0';
+				break;
+			}
+		}
+		// LoadFromFile function call here
+
+		if (fopen_s(&filePtr, input, "r"))
+		{
+			printf("\nCould not open the file");
+			break;
+		}
+		
 		break;
 	case PRINTCURRENT:
 		break;
@@ -93,7 +128,7 @@ void ExecuteCommand(enum Mode command)
 	default:
 		break;
 	}
-	free(row);
+	free(input);
 }
 
 
@@ -145,19 +180,28 @@ int main()
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
 	
-	//PrintMainMenu();
+	PrintMainMenu();
 	enum Mode command = GetUserCommand();
 	ExecuteCommand(command);
 	printf("%s", buffer[0]);
-	//printf("%s\n", buffer[bufferRowCounter]);
-	
-	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
+	printf("%s\n", buffer[bufferRowCounter]);
+	//strcpy_s(buffer[0], ROWSIZE, "hello\0");
+	//printf("%s", buffer[0]);
+	//char* text = (char*)malloc(sizeof(char)*1000);
+	//text[0] = '\0';
+	//strcat_s(text, 1000, buffer[0]); // works
+	//printf("%s", text);
+	//free(text);
 
+	//printf("%s", input);
+
+	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
+	CloseFile(filePtr);
 	//free(buffer);
 	//free(row);
 	//row = NULL;
 
-	Sleep(2000);
+	Sleep(1000);
 	
 	//free(row);
 
