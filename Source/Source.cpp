@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include <windows.h>
 #include "FileLogic.cpp"
-#include "BufferLogic.cpp"
+//#include "BufferLogic.cpp"
 
 FILE* filePtr = NULL;
 const int ROWSIZE = 150;
 const int BUFFERSIZE = 256;
 const int COMMANDSIZE = 10;
-char** buffer;
+char** buffer = NULL;
 int bufferRowCounter = -1;  // default value is -1 empty buffer(no rows)
 
 enum Mode
@@ -39,7 +39,7 @@ BOOL WINAPI ConsoleHandler(DWORD signal)
 void AllocFailureProgTermination() 
 {
 	perror("Error allocating memory");
-	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
+	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
 	CloseFile(filePtr);
 	Sleep(1000);
 	exit(EXIT_FAILURE);
@@ -105,7 +105,7 @@ void ExecuteCommand(enum Mode command)
 
 		printf("\nEnter the filename: ");
 		fgets(input, ROWSIZE, stdin);
-		for (int index = 0; index < sizeof(input); index++) {
+		for (unsigned int index = 0; index < strlen(input); index++) {
 			if (input[index] == '\n') {
 				input[index] = '\0';
 				break;
@@ -117,9 +117,9 @@ void ExecuteCommand(enum Mode command)
 			printf("\nCould not open the file");
 			break;
 		}
-		// LoadFromFile function call here
-		
+		LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE);
 		break;
+
 	case PRINTCURRENT:
 		break;
 	case INSERT:
@@ -131,7 +131,7 @@ void ExecuteCommand(enum Mode command)
 	}
 	free(input);
 }
-
+ 
 
 
 void PrintMainMenu()
@@ -185,26 +185,22 @@ int main()
 		PrintMainMenu();
 		enum Mode command = GetUserCommand();
 		ExecuteCommand(command);
-		printf("%s\n", buffer[bufferRowCounter]);
+		printf("%s\n", buffer[bufferRowCounter - 1]);
 
 	}
-	//strcpy_s(buffer[0], ROWSIZE, "hello\0");
-	//printf("%s", buffer[0]);
-	//char* text = (char*)malloc(sizeof(char)*1000);
-	//text[0] = '\0';
-	//strcat_s(text, 1000, buffer[0]); // works
-	//printf("%s", text);
-	//free(text);
+	
 
-	//printf("%s", input);
+//	printf("%s", buffer[bufferRowCounter]);
 
-	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE);
+	fopen_s(&filePtr, "hello1.txt", "r");
+	
+	LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE,ROWSIZE);
+	printf("%s", buffer[0]);
+	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
 	CloseFile(filePtr);
-	//free(buffer);
-	//free(row);
-	//row = NULL;
 
-	Sleep(1000);
+
+	Sleep(100);
 	
 	//free(row);
 
