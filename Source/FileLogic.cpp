@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-
+#include "BufferLogic.cpp"
 
 void CloseFile(FILE* filePtr)
 {
@@ -38,28 +38,46 @@ int GetTxtSize(FILE* filePtr)
 	return fileSize;
 }
 
-void LoadFromFile(FILE* filePtr, char** destBuffer, int *bufferRowCounter)
+long LoadFromFile(FILE* filePtr, 
+				  char** destBuffer, 
+				  int *bufferRowCounterPtr, 
+				  const int BUFFERSIZE, 
+				  const int ROWSIZE)
 {
 	if (filePtr == NULL)
-		return;
+		return -1;
+
+	if (destBuffer != NULL)  // flushing the buffer if it has been initialized before
+		FreeBuffer(destBuffer, BUFFERSIZE, ROWSIZE, bufferRowCounterPtr);
+
+	InitializeBuffer(&destBuffer, BUFFERSIZE);
+	AddRow(&destBuffer, BUFFERSIZE, bufferRowCounterPtr, ROWSIZE);
+
+	long charCounter = 0;
 	const int FILESIZE = GetTxtSize(filePtr);
 	char* textFromTxt = (char*)calloc(FILESIZE + 2, sizeof(char));  // add 2 to make sure it is in the bounds
 	fread(textFromTxt, sizeof(char), FILESIZE, filePtr);
 	textFromTxt[FILESIZE] = '\0';
-	if ()
+
 	// now write to the buffer
 	for (int index = 0; index <= FILESIZE; index++)   
 	{
-		// some garbage symbols may be written in textFromTxt so to omit them there is a condition
-		if ((int)textFromTxt[index] <= 255 && (int)textFromTxt[index] > 0) {
-			printf("%c", textFromTxt[index]);
+		char curSymbol = textFromTxt[index];
+
+		// some garbage symbols may appear in textFromTxt so to omit them there is a condition
+		if ((int)curSymbol <= 255 && (int)curSymbol > 0) {
+			if (curSymbol == '\n') {
+				AddRow(&destBuffer, BUFFERSIZE, bufferRowCounterPtr, ROWSIZE);
+			}
+			if (GetRowRemainLength(destBuffer, *bufferRowCounterPtr, ROWSIZE) > 2)
+				strncat_s(destBuffer[*bufferRowCounterPtr], ROWSIZE, &curSymbol, 1);
+			charCounter++;
 		}
-		else if (textFromTxt[index] == '\0') {
+		else if (curSymbol == '\0') 
 			break;
-		}
 	}
-
+	//AddRow(&destBuffer, BUFFERSIZE, bufferRowCounterPtr, ROWSIZE);  // starting a new row
 	free(textFromTxt);
-
+	return charCounter;
 }
 
