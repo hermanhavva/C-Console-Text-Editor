@@ -76,8 +76,8 @@ long LoadFromFile(FILE* filePtr,
 		else if (curSymbol == '\0') 
 			break;
 	}
-	//AddRow(&destBuffer, BUFFERSIZE, bufferRowCounterPtr, ROWSIZE);  // starting a new row
 	free(textFromTxt);
+	
 	return charCounter;
 }
 
