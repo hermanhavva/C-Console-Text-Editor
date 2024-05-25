@@ -145,7 +145,7 @@ void ExecuteCommand(enum Mode command)
 			break;
 		}
 		LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE);
-		printf(">>success");
+		printf(">>success\n");
 		break;
 
 	case PRINTCURRENT:
