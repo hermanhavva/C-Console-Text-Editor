@@ -6,11 +6,11 @@
 //#include "BufferLogic.cpp"
 
 FILE* filePtr = NULL;
-const int ROWSIZE = 5;
+const int ROWSIZE = 150;
 const int BUFFERSIZE = 256;
 const int COMMANDSIZE = 10;
 char** buffer = NULL;
-int bufferRowCounter = -1;  // default value is -1 empty buffer(no rows)
+int bufferRowCounter = -1;  // default value is -1 empty buffer (no rows)
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 enum Mode
@@ -76,7 +76,7 @@ void ExecuteCommand(enum Mode command)
 			}
 		}
 		if (GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) > strlen(input)) {
-			strcat_s(buffer[bufferRowCounter], ROWSIZE - 1, input);  // ROWSIZE-1 for keeping place for '/0'
+			strcat_s(buffer[bufferRowCounter], ROWSIZE - 1, input);  // ROWSIZE-1 for keeping place for '\n'
 			printf(">>success\n");
 		}
 		else
@@ -228,7 +228,7 @@ int main()
 
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i <= 4; i++) {
 		PrintMainMenu();
 		enum Mode command = GetUserCommand();
 		ExecuteCommand(command);
