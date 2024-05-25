@@ -6,7 +6,7 @@
 
 void InitializeBuffer(char*** buffer, int const BUFFERSIZE)  // got to check for null after all
 {
-	*buffer = (char**)calloc(sizeof(char*), BUFFERSIZE);
+	*buffer = (char**)calloc(BUFFERSIZE, sizeof(char*));
 
 }
 void AddRow(char*** buffer, const int BUFFERSIZE, int* bufferRowCounterPtr, const int ROWSIZE) {
@@ -27,12 +27,20 @@ void AddRow(char*** buffer, const int BUFFERSIZE, int* bufferRowCounterPtr, cons
 
     (*buffer)[*bufferRowCounterPtr][0] = '\0';
 }
-void FreeBuffer(char** buffer, const int BUFFERSIZE, const int ROWSIZE) 
+void FreeBuffer(char** buffer, const int BUFFERSIZE, const int ROWSIZE, int* bufferRowCounterPtr) 
 {
 	for (int row = 0; row < BUFFERSIZE; row++) 
 	{
 		free(buffer[row]);
 	}
 	free(buffer);
+    *bufferRowCounterPtr = -1;  // sets to initial state
 }
-
+int GetRowRemainLength(char** buffer, const int CURROW, const int ROWSIZE) 
+{
+    int curLength = ROWSIZE;  // by default
+    if (buffer[CURROW] != NULL)
+        curLength = ROWSIZE - strlen(buffer[CURROW]) - 1;  // -1 to keep '\0'
+    
+    return curLength;
+}
