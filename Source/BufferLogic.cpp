@@ -40,7 +40,7 @@ int GetRowRemainLength(char** buffer, const int CURROW, const int ROWSIZE)
 {
     int curLength = ROWSIZE;  // by default
     if (buffer[CURROW] != NULL)
-        curLength = ROWSIZE - strlen(buffer[CURROW]);
+        curLength = ROWSIZE - strlen(buffer[CURROW]) - 1;  // -1 to keep '\0'
     
     return curLength;
 }

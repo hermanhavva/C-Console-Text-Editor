@@ -6,7 +6,7 @@
 //#include "BufferLogic.cpp"
 
 FILE* filePtr = NULL;
-const int ROWSIZE = 150;
+const int ROWSIZE = 5;
 const int BUFFERSIZE = 256;
 const int COMMANDSIZE = 10;
 char** buffer = NULL;
@@ -68,8 +68,20 @@ void ExecuteCommand(enum Mode command)
 
 	case APPEND:
 		fgets(input, ROWSIZE, stdin);
-		strcat_s(buffer[bufferRowCounter], ROWSIZE, input);
-		printf(">>success\n");
+
+		for (int index = 0; index < ROWSIZE; index++) {  // the loop for deleting '/n' symbol
+			if (input[index] == '\n') {
+				input[index] = '\0';
+				break;
+			}
+		}
+		if (GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) > strlen(input)) {
+			strcat_s(buffer[bufferRowCounter], ROWSIZE - 1, input);  // ROWSIZE-1 for keeping place for '/0'
+			printf(">>success\n");
+		}
+		else
+			printf(">>Error, buffer too small\n");
+		
 		break;
 	
 	case NEWLINE:
@@ -94,7 +106,7 @@ void ExecuteCommand(enum Mode command)
 	case SAVETOFILE:  // ADD in case if user cancels the action
 		printf("\nEnter the filename: ");
 		fgets(input, ROWSIZE, stdin);
-		for (int index = 0; index < ROWSIZE; index++) {
+		for (int index = 0; index < ROWSIZE; index++) {  // the loop for deleting '/n' symbol
 			if (input[index] == '\n') {
 				input[index] = '\0';
 				break;
@@ -139,9 +151,9 @@ void ExecuteCommand(enum Mode command)
 	case PRINTCURRENT:
 		printf("Current text: \n________________________________\n");
 		for (int row = 0; row <= bufferRowCounter; row++) {
-			printf("%s\n", buffer[row]);
+			printf("%s", buffer[row]);
 		}
-		printf("________________________________\n");
+		printf("\n________________________________\n");
 		break;
 
 	case INSERT:
@@ -162,7 +174,7 @@ void ExecuteCommand(enum Mode command)
 
 void PrintMainMenu()
 {
-	int curLength = GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE);
+	int curLength = GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) - 1;  
 	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit, 1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current,\n6 - insert, 7 - clean screen\n", curLength);
 }
 enum Mode GetUserCommand() 
@@ -172,6 +184,7 @@ enum Mode GetUserCommand()
 	
 	char* input = (char*)malloc(COMMANDSIZE*sizeof(char));
 	fgets(input, COMMANDSIZE, stdin);
+	
 	switch (input[0])
 	{
 	case '0':
