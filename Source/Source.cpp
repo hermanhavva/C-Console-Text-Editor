@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <conio.h>
 #include "FileLogic.cpp"
 //#include "BufferLogic.cpp"
 
@@ -47,6 +48,16 @@ void AllocFailureProgTermination()
 	Sleep(1000);
 	exit(EXIT_FAILURE);
 }
+int RemoveLastCh(char string[])
+{
+	char removedCh;
+	int lenght = strlen(string);
+	if (lenght > 0) {
+		string[lenght - 1] = '\0';
+		return 0;
+	}
+	return -1;
+}
 
 void ExecuteCommand(enum Mode command) 
 {
@@ -68,13 +79,8 @@ void ExecuteCommand(enum Mode command)
 
 	case APPEND:
 		fgets(input, ROWSIZE, stdin);
+		RemoveLastCh(input);  // removing '\n'
 
-		for (int index = 0; index < ROWSIZE; index++) {  // the loop for deleting '/n' symbol
-			if (input[index] == '\n') {
-				input[index] = '\0';
-				break;
-			}
-		}
 		if (GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) > strlen(input)) {
 			strcat_s(buffer[bufferRowCounter], ROWSIZE - 1, input);  // ROWSIZE-1 for keeping place for '\n'
 			printf(">>success\n");
@@ -106,12 +112,8 @@ void ExecuteCommand(enum Mode command)
 	case SAVETOFILE:  // ADD in case if user cancels the action
 		printf("\nEnter the filename: ");
 		fgets(input, ROWSIZE, stdin);
-		for (int index = 0; index < ROWSIZE; index++) {  // the loop for deleting '/n' symbol
-			if (input[index] == '\n') {
-				input[index] = '\0';
-				break;
-			}
-		}
+		RemoveLastCh(input);  // removing '\n'
+
 		err = fopen_s(&filePtr, input, "a+");
 		if (err != 0 || filePtr == NULL)  // returns 0 if successful
 		{
@@ -157,6 +159,8 @@ void ExecuteCommand(enum Mode command)
 		break;
 
 	case INSERT:
+
+		
 		break;
 	case UNDEFINED:
 		break;
@@ -235,13 +239,6 @@ int main()
 
 	}
 	
-
-//	printf("%s", buffer[bufferRowCounter]);
-
-	//fopen_s(&filePtr, "hello1.txt", "r");
-	
-	//LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE,ROWSIZE);
-//	printf("%s", buffer[0]);
 	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
 	CloseFile(filePtr);
 
