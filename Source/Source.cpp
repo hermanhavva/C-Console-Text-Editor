@@ -20,152 +20,13 @@ int HandleLoadFromFile(char*);
 void HandlePrintCurrent();
 int HandleInsert();
 
-
-
-enum Mode
-{
-	USEREXIT = 0,
-	APPEND = 1,
-	NEWLINE = 2,
-	SAVETOFILE = 3,
-	LOADFROMFILE = 4,
-	PRINTCURRENT = 5,
-	INSERT = 6,
-	CLS = 7,
-	UNDEFINED = 8
-};
-BOOL WINAPI ConsoleHandler(DWORD signal) 
-{
-	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT || signal == CTRL_BREAK_EVENT ||
-		signal == CTRL_LOGOFF_EVENT || signal == CTRL_SHUTDOWN_EVENT) {
-		printf("\nProgram interrupted. Cleaning up...\n");
-		Sleep(1000);
-
-		if (filePtr != NULL)
-			fclose(filePtr);
-		exit(0);
-	}
-	return TRUE;
-}
-
-void AllocFailureProgTermination() 
-{
-	perror("Error allocating memory");
-	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
-	CloseFile(filePtr);
-	Sleep(1000);
-	exit(EXIT_FAILURE);
-}
-int RemoveEndNewLine(char string[])  // if last ch is '\n', removes it
-{
-	int lenght = strlen(string);
-	if (lenght > 0) 
-	{
-		if (string[lenght - 1] == '\n')
-		{
-			string[lenght - 1] = '\0';
-			return 0;
-		}
-	}
-	return -1;
-}
-
-
-
-void ExecuteCommand(enum Mode command) 
-{
-	char* input = (char*)malloc(sizeof(char) * ROWSIZE);
-	if (input == NULL)
-		AllocFailureProgTermination();
-
-	switch (command)
-	{
-	case USEREXIT:
-		HandleUserExit(input);
-		break;
-
-	case APPEND:
-		HandleAppend(input);
-		break;
-	
-	case NEWLINE:
-		HandleNewLine();
-		break;
-	
-	case SAVETOFILE:  // ADD in case if user cancels the action
-		HandleSaveToFile(input);
-		break;
-
-	case LOADFROMFILE:
-		HandleLoadFromFile(input);
-		break;
-
-	case PRINTCURRENT:
-		HandlePrintCurrent();
-		break;
-
-	case INSERT:
-		HandleInsert();
-		break;
-
-	case UNDEFINED:
-		break;
-
-	case CLS:
-		system("cls");
-		break;
-
-	}
-	free(input);
-}
- 
-void PrintMainMenu()
-{
-	int curLength = GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) - 1;  
-	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit, 1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current,\n6 - insert, 7 - clean screen\n", curLength);
-}
-enum Mode GetUserCommand() 
-{
-	printf("Enter number: ");
-	enum Mode command;
-	
-	char* input = (char*)malloc(COMMANDSIZE*sizeof(char));
-	fgets(input, COMMANDSIZE, stdin);
-	
-	switch (input[0])
-	{
-	case '0':
-		command = USEREXIT;
-		break;
-	case '1':
-		command = APPEND;
-		break;
-	case '2':
-		command = NEWLINE;
-		break;
-	case '3':
-		command = SAVETOFILE; 
-		break;
-	case '4':
-		command = LOADFROMFILE;
-		break;
-	case '5':
-		command = PRINTCURRENT;
-		break;
-	case '6':
-		command = INSERT;
-		break;
-	case '7':
-		command = CLS;
-		break;
-	default:  // here we need to check for exit
-		printf(">>The command is not implemmented\n");
-		command = UNDEFINED;
-		break;
-	}
-	free (input);
-	return command;
-}
+enum Mode;
+BOOL WINAPI ConsoleHandler(DWORD);
+void AllocFailureProgTermination();
+int RemoveEndNewLine(char*);
+void ExecuteCommand(enum Mode);
+void PrintMainMenu();
+enum Mode GetUserCommand();
 
 int main()
 {
@@ -195,8 +56,6 @@ int main()
 
 }
 
-
-
 void HandleUserExit(char* input)
 {
 	printf(">>exiting\n");
@@ -206,6 +65,7 @@ void HandleUserExit(char* input)
 	Sleep(100);
 	exit(0);
 }
+
 int HandleAppend(char* input)
 {
 	fgets(input, ROWSIZE, stdin);
@@ -222,6 +82,7 @@ int HandleAppend(char* input)
 		return -1;
 	}
 }
+
 int HandleNewLine()
 {
 	if (bufferRowCounter < BUFFERSIZE - 1)
@@ -243,6 +104,7 @@ int HandleNewLine()
 
 	return -1;
 }
+
 int HandleSaveToFile(char* input)
 {
 	errno_t err;  // to track the execution of fopen_s()
@@ -262,6 +124,7 @@ int HandleSaveToFile(char* input)
 	return 0;
 
 }
+
 int HandleLoadFromFile(char* input)
 {
 	errno_t err;  // to track the execution of fopen_s() 
@@ -289,9 +152,13 @@ int HandleLoadFromFile(char* input)
 	case -1:
 		printf(">>failure\n");
 		return -1;
+	default:
+		printf(">>failure\n");
+		return -1;
 	}
 
 }
+
 void HandlePrintCurrent() 
 {
 	printf("Current text: \n________________________________\n");
@@ -301,6 +168,7 @@ void HandlePrintCurrent()
 
 	printf("\n________________________________\n");
 }
+
 int HandleInsert()
 {
 	unsigned int row, column;  // might make unsigned
@@ -377,4 +245,148 @@ int HandleInsert()
 	return 0;
 }
 
+enum Mode
+{
+	USEREXIT = 0,
+	APPEND = 1,
+	NEWLINE = 2,
+	SAVETOFILE = 3,
+	LOADFROMFILE = 4,
+	PRINTCURRENT = 5,
+	INSERT = 6,
+	CLS = 7,
+	UNDEFINED = 8
+};
+
+BOOL WINAPI ConsoleHandler(DWORD signal) {
+	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT || signal == CTRL_BREAK_EVENT ||
+		signal == CTRL_LOGOFF_EVENT || signal == CTRL_SHUTDOWN_EVENT) {
+		printf("\nProgram interrupted. Cleaning up...\n");
+		Sleep(1000);
+
+		if (filePtr != NULL)
+			fclose(filePtr);
+		exit(0);
+	}
+	return TRUE;
+}
+
+void AllocFailureProgTermination()
+{
+	perror("Error allocating memory");
+	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
+	CloseFile(filePtr);
+	Sleep(1000);
+	exit(EXIT_FAILURE);
+}
+
+int RemoveEndNewLine(char* string)
+{
+	int lenght = strlen(string);
+	if (lenght > 0)
+	{
+		if (string[lenght - 1] == '\n')
+		{
+			string[lenght - 1] = '\0';
+			return 0;
+		}
+	}
+	return -1;
+}
+
+void ExecuteCommand(enum Mode command)
+{
+	char* input = (char*)malloc(sizeof(char) * ROWSIZE);
+	if (input == NULL)
+		AllocFailureProgTermination();
+
+	switch (command)
+	{
+	case USEREXIT:
+		HandleUserExit(input);
+		break;
+
+	case APPEND:
+		HandleAppend(input);
+		break;
+
+	case NEWLINE:
+		HandleNewLine();
+		break;
+
+	case SAVETOFILE:  // ADD in case if user cancels the action
+		HandleSaveToFile(input);
+		break;
+
+	case LOADFROMFILE:
+		HandleLoadFromFile(input);
+		break;
+
+	case PRINTCURRENT:
+		HandlePrintCurrent();
+		break;
+
+	case INSERT:
+		HandleInsert();
+		break;
+
+	case UNDEFINED:
+		break;
+
+	case CLS:
+		system("cls");
+		break;
+
+	}
+	free(input);
+}
+
+void PrintMainMenu()
+{
+	int curLength = GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) - 1;
+	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit, 1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current,\n6 - insert, 7 - clean screen\n", curLength);
+}
+
+enum Mode GetUserCommand()
+{
+	printf("Enter number: ");
+	enum Mode command;
+
+	char* input = (char*)malloc(COMMANDSIZE * sizeof(char));
+	fgets(input, COMMANDSIZE, stdin);
+
+	switch (input[0])
+	{
+	case '0':
+		command = USEREXIT;
+		break;
+	case '1':
+		command = APPEND;
+		break;
+	case '2':
+		command = NEWLINE;
+		break;
+	case '3':
+		command = SAVETOFILE;
+		break;
+	case '4':
+		command = LOADFROMFILE;
+		break;
+	case '5':
+		command = PRINTCURRENT;
+		break;
+	case '6':
+		command = INSERT;
+		break;
+	case '7':
+		command = CLS;
+		break;
+	default:  // here we need to check for exit
+		printf(">>The command is not implemmented\n");
+		command = UNDEFINED;
+		break;
+	}
+	free(input);
+	return command;
+}
 
