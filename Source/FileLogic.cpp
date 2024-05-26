@@ -53,7 +53,6 @@ long LoadFromFile(FILE* filePtr,
 	InitializeBuffer(&destBuffer, BUFFERSIZE);
 	AddRow(&destBuffer, BUFFERSIZE, bufferRowCounterPtr, ROWSIZE);
 
-	long charCounter = 0;
 	const int FILESIZE = GetTxtSize(filePtr);
 	char* textFromTxt = (char*)calloc(FILESIZE + 2, sizeof(char));  // add 2 to make sure it is in the bounds
 	fread(textFromTxt, sizeof(char), FILESIZE, filePtr);
@@ -69,15 +68,21 @@ long LoadFromFile(FILE* filePtr,
 			if (curSymbol == '\n') {
 				AddRow(&destBuffer, BUFFERSIZE, bufferRowCounterPtr, ROWSIZE);
 			}
-			if (GetRowRemainLength(destBuffer, *bufferRowCounterPtr, ROWSIZE) > 2)
+			if (GetRowRemainLength(destBuffer, *bufferRowCounterPtr, ROWSIZE) > 2) 
 				strncat_s(destBuffer[*bufferRowCounterPtr], ROWSIZE, &curSymbol, 1);
-			charCounter++;
+				
+			else 
+			{
+				printf("Lines in file are too long, loosing content\n");
+				return -1;
+			}
+			
 		}
 		else if (curSymbol == '\0') 
 			break;
 	}
 	free(textFromTxt);
 	
-	return charCounter;
+	return 0;
 }
 

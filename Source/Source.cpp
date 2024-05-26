@@ -1,10 +1,7 @@
-﻿
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include <conio.h>
 #include "FileLogic.cpp"
-//#include "BufferLogic.cpp"
 
 FILE* filePtr = NULL;
 const int ROWSIZE = 150;
@@ -48,15 +45,96 @@ void AllocFailureProgTermination()
 	Sleep(1000);
 	exit(EXIT_FAILURE);
 }
-int RemoveLastCh(char string[])
+int RemoveEndNewLine(char string[])  // if last ch is '\n', removes it
 {
-	char removedCh;
 	int lenght = strlen(string);
-	if (lenght > 0) {
-		string[lenght - 1] = '\0';
-		return 0;
+	if (lenght > 0) 
+	{
+		if (string[lenght - 1] == '\n')
+		{
+			string[lenght - 1] = '\0';
+			return 0;
+		}
 	}
 	return -1;
+}
+
+
+int HandleInsert()
+{
+	unsigned int row, column;  // might make unsigned
+	char* input = (char*)malloc(sizeof(char) * (ROWSIZE - 1));
+	printf("\nRow for insertion: ");
+	scanf_s(" %u", &row);
+	printf("\nColumn for insertion: ");
+	scanf_s(" %u", &column);
+	fgets(input, ROWSIZE, stdin);  // just to get '\n' out of stdin buffer
+
+	printf("String to insert: ");
+	fgets(input, ROWSIZE, stdin);
+	RemoveEndNewLine(input);  // for omitting '\n'
+
+	if (row > bufferRowCounter || column > ROWSIZE) {
+		printf(">>Row/Column index too big (might use newline first)\n");
+		return -1;
+	}
+	int rowTextLength = strlen(buffer[row]);  // on this index there is '\0'
+	int insertTextLength = strlen(input);
+	int curRowMaxSize = ROWSIZE;  // size is dynamic 
+
+	if ((insertTextLength + rowTextLength + 2) - curRowMaxSize > 0 && (insertTextLength + rowTextLength + 2) - curRowMaxSize < 30)
+	{   // the logic can handle +30 expansion, but not more
+		buffer[row] = (char*)realloc(buffer[row], sizeof(char) * (curRowMaxSize + 30));
+
+		if (buffer[row] == NULL)
+			AllocFailureProgTermination();
+		curRowMaxSize += 30;
+	}
+	else if ((insertTextLength + rowTextLength + 2) - curRowMaxSize >= 30)
+	{
+		printf(">>The row is full or message too big to insert\n");
+		return -1;
+	}
+
+	//if ((insertLength + rowLength + 2) < ROWSIZE)  // + 2 is for '\n' and '\0'
+	//{							 
+	if ((rowTextLength + 1) < column)  // add spaces
+	{							
+		for (int colIndex = rowTextLength - 1; colIndex < column - 1; colIndex++)  // -1 for to handle '\n'
+			buffer[row][colIndex] = ' ';
+
+		buffer[row][column - 1] = '\0';
+		strcat_s(buffer[row], curRowMaxSize - 1, input);
+
+		int curLength = strlen(buffer[row]);
+		buffer[row][curLength] = '\n';  // handle next row 
+		buffer[row][curLength + 1] = '\0';
+	}
+	else if ((rowTextLength + 1) > column)
+	{
+		char* addBuffer = (char*)malloc(sizeof(char) * curRowMaxSize - 1);
+		addBuffer[0] = '\0';
+		char ch = '0';
+		for (int colIndex = column; colIndex < rowTextLength; colIndex++)  // here is the problem
+		{
+			ch = buffer[row][colIndex];
+			strncat_s(addBuffer, curRowMaxSize - 1, &ch, 1);  // one symbol at a time
+				
+		}
+		buffer[row][column] = '\0';
+		//printf("%s", addBuffer);  
+		strcat_s(buffer[row], curRowMaxSize - 1, input);
+		strcat_s(buffer[row], curRowMaxSize - 1, addBuffer);  // buffer too small if realloc
+		free(addBuffer);
+	}
+	else  // only strcat
+	{
+		strcat_s(buffer[row], curRowMaxSize - 1, input);
+	}
+
+	//	}
+	free(input);
+	return 0;
 }
 
 void ExecuteCommand(enum Mode command) 
@@ -79,14 +157,14 @@ void ExecuteCommand(enum Mode command)
 
 	case APPEND:
 		fgets(input, ROWSIZE, stdin);
-		RemoveLastCh(input);  // removing '\n'
+		RemoveEndNewLine(input);  // removing '\n'
 
 		if (GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) > strlen(input)) {
 			strcat_s(buffer[bufferRowCounter], ROWSIZE - 1, input);  // ROWSIZE-1 for keeping place for '\n'
 			printf(">>success\n");
 		}
 		else
-			printf(">>Error, buffer too small\n");
+			printf(">>Error, buffer too small, start a newline\n");
 		
 		break;
 	
@@ -112,7 +190,7 @@ void ExecuteCommand(enum Mode command)
 	case SAVETOFILE:  // ADD in case if user cancels the action
 		printf("\nEnter the filename: ");
 		fgets(input, ROWSIZE, stdin);
-		RemoveLastCh(input);  // removing '\n'
+		RemoveEndNewLine(input);  // removing '\n'
 
 		err = fopen_s(&filePtr, input, "a+");
 		if (err != 0 || filePtr == NULL)  // returns 0 if successful
@@ -133,21 +211,24 @@ void ExecuteCommand(enum Mode command)
 			break;
 
 		printf("\nEnter the filename: ");
-		fgets(input, ROWSIZE, stdin);
-		for (unsigned int index = 0; index < strlen(input); index++) {
-			if (input[index] == '\n') {
-				input[index] = '\0';
-				break;
-			}
-		}
+		fgets(input, ROWSIZE, stdin);   // remove '\n'
+		RemoveEndNewLine(input);
+
 		err = fopen_s(&filePtr, input, "r");
 		if (err != 0 || filePtr == NULL)  // returns 0 if successful
 		{
 			printf("\nCould not open the file");
 			break;
 		}
-		LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE);
-		printf(">>success\n");
+		switch (LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE))
+		{
+		case 0:
+			printf(">>success\n");
+			break;
+		case -1:
+			printf(">>failure\n");
+			break;
+		}
 		break;
 
 	case PRINTCURRENT:
@@ -159,8 +240,7 @@ void ExecuteCommand(enum Mode command)
 		break;
 
 	case INSERT:
-
-		
+		HandleInsert();
 		break;
 	case UNDEFINED:
 		break;
@@ -174,8 +254,6 @@ void ExecuteCommand(enum Mode command)
 	free(input);
 }
  
-
-
 void PrintMainMenu()
 {
 	int curLength = GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) - 1;  
@@ -209,6 +287,9 @@ enum Mode GetUserCommand()
 	case '5':
 		command = PRINTCURRENT;
 		break;
+	case '6':
+		command = INSERT;
+		break;
 	case '7':
 		command = CLS;
 		break;
@@ -232,7 +313,7 @@ int main()
 
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
-	for (int i = 0; i <= 4; i++) {
+	for (int i = 0; i <= 5; i++) {
 		PrintMainMenu();
 		enum Mode command = GetUserCommand();
 		ExecuteCommand(command);
