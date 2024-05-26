@@ -39,21 +39,19 @@ int main()
 
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
-	for (int i = 0; i <= 5; i++) {
+	while (TRUE)
+	{
 		PrintMainMenu();
 		enum Mode command = GetUserCommand();
 		ExecuteCommand(command);
-
 	}
 	
 	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
 	CloseFile(filePtr);
 
-
 	Sleep(100);
 
 	return 0; 
-
 }
 
 void HandleUserExit(char* input)
@@ -120,6 +118,7 @@ int HandleSaveToFile(char* input)
 	}
 	WriteToFile(filePtr, buffer, BUFFERSIZE, ROWSIZE, bufferRowCounter);
 	CloseFile(filePtr);
+	filePtr = NULL;
 	printf(">>success\n");
 	return 0;
 
@@ -148,12 +147,18 @@ int HandleLoadFromFile(char* input)
 	{
 	case 0:
 		printf(">>success\n");
+		CloseFile(filePtr);
+		filePtr = NULL;
 		return 0;
 	case -1:
 		printf(">>failure\n");
+		CloseFile(filePtr);
+		filePtr = NULL;
 		return -1;
 	default:
 		printf(">>failure\n");
+		CloseFile(filePtr);
+		filePtr = NULL;
 		return -1;
 	}
 
