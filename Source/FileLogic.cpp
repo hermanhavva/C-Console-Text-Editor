@@ -71,8 +71,11 @@ long LoadFromFile(FILE* filePtr,
 			if (GetRowRemainLength(destBuffer, *bufferRowCounterPtr, ROWSIZE) > 2) 
 				strncat_s(destBuffer[*bufferRowCounterPtr], ROWSIZE, &curSymbol, 1);
 				
-			else
+			else 
+			{
 				printf("Lines in file are too long, loosing content\n");
+				return -1;
+			}
 			
 		}
 		else if (curSymbol == '\0') 

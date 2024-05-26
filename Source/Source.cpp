@@ -4,7 +4,7 @@
 #include "FileLogic.cpp"
 
 FILE* filePtr = NULL;
-const int ROWSIZE = 30;
+const int ROWSIZE = 150;
 const int BUFFERSIZE = 256;
 const int COMMANDSIZE = 10;
 char** buffer = NULL;
@@ -211,21 +211,24 @@ void ExecuteCommand(enum Mode command)
 			break;
 
 		printf("\nEnter the filename: ");
-		fgets(input, ROWSIZE, stdin);
-		for (unsigned int index = 0; index < strlen(input); index++) {
-			if (input[index] == '\n') {
-				input[index] = '\0';
-				break;
-			}
-		}
+		fgets(input, ROWSIZE, stdin);   // remove '\n'
+		RemoveEndNewLine(input);
+
 		err = fopen_s(&filePtr, input, "r");
 		if (err != 0 || filePtr == NULL)  // returns 0 if successful
 		{
 			printf("\nCould not open the file");
 			break;
 		}
-		LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE);
-		printf(">>success\n");
+		switch (LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE))
+		{
+		case 0:
+			printf(">>success\n");
+			break;
+		case -1:
+			printf(">>failure\n");
+			break;
+		}
 		break;
 
 	case PRINTCURRENT:
