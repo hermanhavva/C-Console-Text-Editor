@@ -85,17 +85,22 @@ int HandleNewLine()
 {
 	if (bufferRowCounter < BUFFERSIZE - 1)
 	{
-		for (int index = 0; index < ROWSIZE - 1; index++)
+		const int nullTerminationIndex = strlen(buffer[bufferRowCounter]);
+		if (nullTerminationIndex >= ROWSIZE && nullTerminationIndex < ROWSIZE + 30 - 1)  // reallocation was in place
 		{
-			if (buffer[bufferRowCounter][index] == '\0')
-			{
-				buffer[bufferRowCounter][index] = '\n';
-				buffer[bufferRowCounter][index + 1] = '\0';
-				AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
-				printf(">>success\n");
-				return 0;
-			}
+			buffer[bufferRowCounter][nullTerminationIndex] = '\n';
+			buffer[bufferRowCounter][nullTerminationIndex + 1] = '\0';
 		}
+
+		else if (nullTerminationIndex < ROWSIZE - 1) 
+		{
+			buffer[bufferRowCounter][nullTerminationIndex] = '\n';
+			buffer[bufferRowCounter][nullTerminationIndex + 1] = '\0';
+		}
+	
+		AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
+		printf(">>success\n");
+		return 0;
 	}
 	else
 		printf("Unable to start a new line(buffer is full)");
@@ -212,16 +217,20 @@ int HandleInsert()
 
 	if ((rowTextLength + 1) < column)  // add spaces
 	{
-		for (int colIndex = rowTextLength - 1; colIndex < column - 1; colIndex++)  // -1 for to handle '\n'
-			buffer[row][colIndex] = ' ';
+
+		for (int colIndex = rowTextLength; colIndex < column - 1; colIndex++)  
+			buffer[row][colIndex] = ' ';  
 
 		buffer[row][column - 1] = '\0';
 		strcat_s(buffer[row], curRowMaxSize - 1, input);
-
-		int curLength = strlen(buffer[row]);
-
-		buffer[row][curLength] = '\n';  // handle next row 
-		buffer[row][curLength + 1] = '\0';
+	
+		if (row > bufferRowCounter)  // so there is '\n' and we need to transfer it to the end
+		{
+			int curLength = strlen(buffer[row]);
+			buffer[row][rowTextLength - 1] = ' ';
+			buffer[row][curLength] = '\n';
+			buffer[row][curLength + 1] = '\0';
+		}
 	}
 	else if ((rowTextLength + 1) > column)
 	{
@@ -245,6 +254,7 @@ int HandleInsert()
 	{
 		strcat_s(buffer[row], curRowMaxSize - 1, input);
 	}
+	printf(">>success\n");
 
 	free(input);
 	return 0;
