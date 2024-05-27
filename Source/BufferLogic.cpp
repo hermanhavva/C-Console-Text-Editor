@@ -4,16 +4,19 @@
 
 
 
-void InitializeBuffer(char*** buffer, int const BUFFERSIZE)  // got to check for null after all
+int InitializeBuffer(char*** buffer, int const BUFFERSIZE)  // got to check for null after all
 {
 	*buffer = (char**)calloc(BUFFERSIZE, sizeof(char*));
+    if (buffer == NULL)
+        return -1;
+    return 0;
 
 }
-void AddRow(char*** buffer, const int BUFFERSIZE, int* bufferRowCounterPtr, const int ROWSIZE) {
+int AddRow(char*** buffer, const int BUFFERSIZE, int* bufferRowCounterPtr, const int ROWSIZE) {
     if (*bufferRowCounterPtr >= BUFFERSIZE - 1) 
     {
         printf("Buffer is full. Cannot add more rows.\n");
-        return;
+        return -1;
     }
 
     (*bufferRowCounterPtr)++;
@@ -22,10 +25,11 @@ void AddRow(char*** buffer, const int BUFFERSIZE, int* bufferRowCounterPtr, cons
     if ((*buffer)[*bufferRowCounterPtr] == NULL) {
         perror("Failed to allocate row\n");
         (*bufferRowCounterPtr)--;
-        return;
+        return -1;
     }
 
     (*buffer)[*bufferRowCounterPtr][0] = '\0';
+    return 0;
 }
 void FreeBuffer(char** buffer, const int BUFFERSIZE, const int ROWSIZE, int* bufferRowCounterPtr) 
 {
