@@ -69,7 +69,7 @@ int HandleAppend(char* input)
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);  // removing '\n'
 
-	if (GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) > strlen(input)) {
+	if (GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) > (int)strlen(input)) {
 		strcat_s(buffer[bufferRowCounter], ROWSIZE - 1, input);  // ROWSIZE-1 for keeping place for '\n'
 		printf(">>success\n");
 		return 0;
@@ -175,13 +175,12 @@ void HandlePrintCurrent()
 
 	for (int row = 0; row <= bufferRowCounter; row++)
 		printf("%s", buffer[row]);
-
-	printf("\n________________________________\n");
+	printf("\n");
 }
 
 int HandleInsert()
 {
-	unsigned int row, column;  // might make unsigned
+	int row, column;  
 	char* input = (char*)malloc(sizeof(char) * (ROWSIZE - 1));
 	printf("\nRow for insertion: ");
 	scanf_s(" %u", &row);
@@ -260,6 +259,34 @@ int HandleInsert()
 	return 0;
 }
 
+int HandleSearch(char* input) 
+{
+	printf("Enter the substring to look for: ");
+	fgets(input, ROWSIZE, stdin);
+	RemoveEndNewLine(input);
+
+	printf("It can be found on positions(row|column): ");
+	for (unsigned int row = 0; row <= bufferRowCounter; row++) 
+	{
+		for (unsigned int column = 0; column < strlen(buffer[row]); column++) 
+		{
+			BOOL ifPresent = TRUE;
+			if (buffer[row][column] == input[0])  // if first elements are the same
+			{
+				for (unsigned int inputIndex = 1; inputIndex < strlen(input); inputIndex++) 
+				{
+					if (buffer[row][column + inputIndex] != input[inputIndex])
+						ifPresent = FALSE;
+				}
+				if (ifPresent) 
+					printf("%d|%d; ", row, column);
+				
+			}
+		}
+	}
+	printf("\n");
+	return 0;
+}
 enum Mode
 {
 	USEREXIT = 0,
@@ -270,7 +297,8 @@ enum Mode
 	PRINTCURRENT = 5,
 	INSERT = 6,
 	CLS = 7,
-	UNDEFINED = 8
+	SEARCH = 8,
+	UNDEFINED = 9
 };
 
 BOOL WINAPI ConsoleHandler(DWORD signal) {
@@ -345,11 +373,15 @@ void ExecuteCommand(enum Mode command)
 		HandleInsert();
 		break;
 
-	case UNDEFINED:
+	case SEARCH:
+		HandleSearch(input);
 		break;
 
 	case CLS:
 		system("cls");
+		break;
+
+	case UNDEFINED:
 		break;
 
 	}
@@ -359,7 +391,8 @@ void ExecuteCommand(enum Mode command)
 void PrintMainMenu()
 {
 	int curLength = GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) - 1;
-	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit, 1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current,\n6 - insert, 7 - clean screen\n", curLength);
+	printf("________________________________\n");
+	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit, 1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current,\n6 - insert, 7 - search, 8 - clean screen;\n", curLength);
 }
 
 enum Mode GetUserCommand()
@@ -369,6 +402,14 @@ enum Mode GetUserCommand()
 
 	char* input = (char*)malloc(COMMANDSIZE * sizeof(char));
 	fgets(input, COMMANDSIZE, stdin);
+	RemoveEndNewLine(input);
+
+	if (strlen(input) > 1) 
+	{
+		printf(">>The command is not implemmented\n");
+		command = UNDEFINED;
+		return command;
+	}
 
 	switch (input[0])
 	{
@@ -394,9 +435,12 @@ enum Mode GetUserCommand()
 		command = INSERT;
 		break;
 	case '7':
+		command = SEARCH;
+		break;
+	case '8':
 		command = CLS;
 		break;
-	default:  // here we need to check for exit
+	default:  
 		printf(">>The command is not implemmented\n");
 		command = UNDEFINED;
 		break;
