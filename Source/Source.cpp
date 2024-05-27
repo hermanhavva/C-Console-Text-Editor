@@ -254,6 +254,7 @@ int HandleInsert()
 	{
 		strcat_s(buffer[row], curRowMaxSize - 1, input);
 	}
+	printf(">>success\n");
 
 	free(input);
 	return 0;
