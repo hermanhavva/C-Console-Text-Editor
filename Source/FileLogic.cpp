@@ -65,8 +65,14 @@ long LoadFromFile(FILE* filePtr,
 
 		// some garbage symbols may appear in textFromTxt so to omit them there is a condition
 		if ((int)curSymbol <= 255 && (int)curSymbol > 0) {
-			if (curSymbol == '\n') {
-				AddRow(&destBuffer, BUFFERSIZE, bufferRowCounterPtr, ROWSIZE);
+			if (curSymbol == '\n') 
+			{
+				if (AddRow(&destBuffer, BUFFERSIZE, bufferRowCounterPtr, ROWSIZE) == -1) 
+				{
+					printf("The file is too long\n");
+					free(textFromTxt);
+					return -1;
+				}
 			}
 			if (GetRowRemainLength(destBuffer, *bufferRowCounterPtr, ROWSIZE) > 2) 
 				strncat_s(destBuffer[*bufferRowCounterPtr], ROWSIZE, &curSymbol, 1);
@@ -74,6 +80,7 @@ long LoadFromFile(FILE* filePtr,
 			else 
 			{
 				printf("Lines in file are too long, loosing content\n");
+				free(textFromTxt);
 				return -1;
 			}
 			

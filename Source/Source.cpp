@@ -145,7 +145,7 @@ int HandleLoadFromFile(char* input)
 	err = fopen_s(&filePtr, input, "r");
 	if (err != 0 || filePtr == NULL)  // returns 0 if successful
 	{
-		printf("\nCould not open the file");
+		printf("\nCould not open the file\n");
 		return -1;
 	}
 	switch (LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE))
