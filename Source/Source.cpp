@@ -36,7 +36,7 @@ int main()
 	}
 	SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
 	system("cls");
-
+	
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
 	while (TRUE)
