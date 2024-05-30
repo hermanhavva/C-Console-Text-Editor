@@ -39,6 +39,7 @@ int main()
 	
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
+
 	while (TRUE)
 	{
 		PrintMainMenu();
@@ -359,12 +360,17 @@ void ExecuteCommand(enum Mode command)
 		HandleNewLine();
 		break;
 
-	case SAVETOFILE:  // ADD in case if user cancels the action
+	case SAVETOFILE:  
 		HandleSaveToFile(input);
 		break;
 
 	case LOADFROMFILE:
-		HandleLoadFromFile(input);
+		if(HandleLoadFromFile(input) == -1)  // problem reading the file
+		{
+			FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
+			InitializeBuffer(&buffer, BUFFERSIZE);
+			AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
+		}
 		break;
 
 	case PRINTCURRENT:
