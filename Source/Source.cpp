@@ -36,9 +36,10 @@ int main()
 	}
 	SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
 	system("cls");
-
+	
 	InitializeBuffer(&buffer, BUFFERSIZE);
 	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
+
 	while (TRUE)
 	{
 		PrintMainMenu();
@@ -145,7 +146,7 @@ int HandleLoadFromFile(char* input)
 	err = fopen_s(&filePtr, input, "r");
 	if (err != 0 || filePtr == NULL)  // returns 0 if successful
 	{
-		printf("\nCould not open the file");
+		printf("\nCould not open the file\n");
 		return -1;
 	}
 	switch (LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE))
@@ -181,7 +182,9 @@ void HandlePrintCurrent()
 int HandleInsert()
 {
 	int row, column;  
+	const int offset = 30;
 	char* input = (char*)malloc(sizeof(char) * (ROWSIZE - 1));
+	
 	printf("\nRow for insertion: ");
 	scanf_s(" %u", &row);
 	printf("\nColumn for insertion: ");
@@ -200,15 +203,15 @@ int HandleInsert()
 	int insertTextLength = strlen(input);
 	int curRowMaxSize = ROWSIZE;  // size is dynamic 
 
-	if ((insertTextLength + rowTextLength + 2) - curRowMaxSize > 0 && (insertTextLength + rowTextLength + 2) - curRowMaxSize < 30)
+	if ((insertTextLength + rowTextLength + 2) - curRowMaxSize > 0 && (insertTextLength + rowTextLength + 2) - curRowMaxSize < offset)
 	{   // the logic can handle +30 expansion, but not more
-		buffer[row] = (char*)realloc(buffer[row], sizeof(char) * (curRowMaxSize + 30));
+		buffer[row] = (char*)realloc(buffer[row], sizeof(char) * (curRowMaxSize + offset));
 
 		if (buffer[row] == NULL)
 			AllocFailureProgTermination();
-		curRowMaxSize += 30;
+		curRowMaxSize += offset;
 	}
-	else if ((insertTextLength + rowTextLength + 2) - curRowMaxSize >= 30)
+	else if ((insertTextLength + rowTextLength + 2) - curRowMaxSize >= offset)
 	{
 		printf(">>The row is full or message too big to insert\n");
 		return -1;
@@ -236,7 +239,7 @@ int HandleInsert()
 		char* addBuffer = (char*)malloc(sizeof(char) * curRowMaxSize - 1);
 		addBuffer[0] = '\0';
 		char ch = '0';
-		for (int colIndex = column; colIndex < rowTextLength; colIndex++)  // here is the problem
+		for (int colIndex = column; colIndex < rowTextLength; colIndex++)  
 		{
 			ch = buffer[row][colIndex];
 			strncat_s(addBuffer, curRowMaxSize - 1, &ch, 1);  // one symbol at a time
@@ -245,7 +248,7 @@ int HandleInsert()
 		buffer[row][column] = '\0';
  
 		strcat_s(buffer[row], curRowMaxSize - 1, input);
-		strcat_s(buffer[row], curRowMaxSize - 1, addBuffer);  // buffer too small if realloc
+		strcat_s(buffer[row], curRowMaxSize - 1, addBuffer);  
 
 		free(addBuffer);
 	}
@@ -357,12 +360,17 @@ void ExecuteCommand(enum Mode command)
 		HandleNewLine();
 		break;
 
-	case SAVETOFILE:  // ADD in case if user cancels the action
+	case SAVETOFILE:  
 		HandleSaveToFile(input);
 		break;
 
 	case LOADFROMFILE:
-		HandleLoadFromFile(input);
+		if(HandleLoadFromFile(input) == -1)  // problem reading the file
+		{
+			FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
+			InitializeBuffer(&buffer, BUFFERSIZE);
+			AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
+		}
 		break;
 
 	case PRINTCURRENT:
