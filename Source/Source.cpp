@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include "FileLogic.cpp"
+#include "Buffer Class.cpp"
 
 
 FILE* filePtr = NULL;
@@ -27,7 +28,7 @@ int RemoveEndNewLine(char*);
 void ExecuteCommand(enum Mode);
 void PrintMainMenu();
 enum Mode GetUserCommand();
-
+/*
 int main()
 {
 	if (!SetConsoleCtrlHandler(ConsoleHandler, TRUE)) {
@@ -53,6 +54,14 @@ int main()
 	Sleep(100);
 
 	return 0; 
+}*/ 
+
+int main() 
+{
+	Buffer* buffer = new Buffer();
+	Sleep(4000);
+	delete buffer;
+	Sleep(4000);
 }
 
 void HandleUserExit(char* input)
@@ -209,6 +218,7 @@ int HandleInsert()
 
 		if (buffer[row] == NULL)
 			AllocFailureProgTermination();
+
 		curRowMaxSize += offset;
 	}
 	else if ((insertTextLength + rowTextLength + 2) - curRowMaxSize >= offset)
