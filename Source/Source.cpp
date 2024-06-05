@@ -59,9 +59,20 @@ int main()
 int main() 
 {
 	Buffer* buffer = new Buffer();
-	Sleep(4000);
+	char* input = new char[10];
+	input[0] = '\0';
+	strcpy_s(input, 10, "hello");
+	buffer->Append(input);
+	buffer->AddRow();
+	strcpy_s(input, 10, "2 row");
+	
+	buffer->Append(input);
+	buffer->SetCursorPosition(1, 0);
+	buffer->AddRow();
+	buffer->PrintCurrent();
+
+	delete input;
 	delete buffer;
-	Sleep(4000);
 }
 
 void HandleUserExit(char* input)
