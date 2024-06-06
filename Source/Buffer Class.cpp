@@ -10,14 +10,16 @@ class Buffer
 public:
     Buffer();  // constructor
     ~Buffer();  // destructor 
-    int Append(char*);
-    int AddRow();
-    int SaveToFile(FILE*); 
-    int LoadFromFile(FILE*);
+    int  Append(char*);
+    int  AddRow();
+    int  SaveToFile(FILE*); 
+    int  LoadFromFile(FILE*);
     void PrintCurrent();
-    int SetCursorPosition(int, int);
-    int MoveCursorToEnd();
-    int GetCurRowRemainLength();
+    int  InsertAtCursorPos();
+    void SearchSubstrPos(char*);
+    int  SetCursorPosition(int, int);
+    int  MoveCursorToEnd();
+    int  GetCurRowRemainLength();
     void FlushText();  // sets the buffer to initial state
 
 private:
@@ -275,6 +277,35 @@ void Buffer::PrintCurrent()
 
     printf("\n");
 }
+
+void Buffer::SearchSubstrPos(char* subString) 
+{
+    printf("It can be found on positions(row|column): ");
+
+    for (unsigned int row = 0; row <= totalRowCounter; row++)
+    {
+        for (unsigned int column = 0; column < strlen(text[row]); column++)
+        {
+            bool ifPresent = true;
+            if (text[row][column] == subString[0])  // if first elements are the same
+            {
+                for (unsigned int inputIndex = 1; inputIndex < strlen(subString); inputIndex++)
+                {
+                    if (text[row][column + inputIndex] != subString[inputIndex])
+                        ifPresent = false;
+                }
+                if (ifPresent)
+                    printf("%d|%d; ", row, column);
+            }
+        }
+    }
+    printf("\n");
+}
+
+int Buffer::InsertAtCursorPos() {
+    return 0;
+}
+
 
 int Buffer::SetCursorPosition(int row, int column)
 {
