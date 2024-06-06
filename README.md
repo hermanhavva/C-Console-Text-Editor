@@ -1,7 +1,7 @@
 # C-Console-Text-Editor
 Simple console application on C which enables writing, loading to, reading from txt  
 
-## Supported commands
+# 🎯 Supported commands
 1. Append
 2. Newline
 3. Save to a txt file
