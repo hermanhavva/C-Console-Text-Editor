@@ -14,6 +14,7 @@ public:
     int AddRow();
     void PrintCurrent();
     int SetCursorPosition(int, int);
+    int MoveCursorToEnd();
     int GetCurRowRemainLength();
 
 private:
@@ -93,7 +94,7 @@ int Buffer::AddRow()
 
     int curRow = curCursor->GetRow();
     int curColumn = curCursor->GetColumn();
-
+    // got to add some more conditions
     if (curRow >= defaultRowNum - 1 || totalRowCounter >= defaultRowNum - 1 || curColumn < 0 || curColumn >= defaultRowLength)
     {
         printf(">>The buffer is too small\n");
@@ -156,11 +157,11 @@ int Buffer::AddRow()
 
     if (curColumn < strlen(text[curRow]))   // need to move text to another row
     {
-        buffer[0] = '\0';
-        for (int columnIndex = curColumn; columnIndex <= strlen(text[curRow]); columnIndex++)
+        buffer[0] = '\0'; 
+        for (int columnIndex = curColumn; columnIndex < strlen(text[curRow]); columnIndex++)
         {
             char curSymbol = text[curRow][columnIndex];
-            strcat_s(buffer, defaultRowLength, &curSymbol);
+            strncat_s(buffer, defaultRowLength, &curSymbol, 1);   
         }
         text[curRow][curColumn] = '\0';
         strcat_s(text[curRow + 1], defaultRowLength, buffer);
@@ -189,9 +190,7 @@ int Buffer::Append(char* input) // update cursor with the values of the end of t
         printf(">>Error, buffer too small, start a newline\n");
         return -1;
     }
-
-    curCursor->SetRow(curRow);
-    curCursor->SetColumn(strlen(text[curRow]));
+    MoveCursorToEnd();
     
     return 0;
 }
@@ -225,6 +224,16 @@ int Buffer::SetCursorPosition(int row, int column)
     return 0;
 }
 
+int Buffer::MoveCursorToEnd() 
+{
+    if (text[totalRowCounter] == nullptr)
+    {
+        return -1;
+    }
+    SetCursorPosition(totalRowCounter, strlen(text[totalRowCounter]));
+    
+    return 0;
+}
 int Buffer::GetCurRowRemainLength()  // returns remaining size of the current row
 {
     int remainLength = defaultRowLength;  // by default
