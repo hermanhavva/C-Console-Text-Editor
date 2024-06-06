@@ -67,7 +67,7 @@ int main()
 	strcpy_s(input, 10, "2 row");
 	
 	buffer->Append(input);
-	buffer->SetCursorPosition(1, 0);
+	buffer->SetCursorPosition(1, 1);
 	buffer->AddRow();
 	buffer->PrintCurrent();
 

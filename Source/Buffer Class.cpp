@@ -66,8 +66,21 @@ int Buffer::InitializeBuffer()
     {
         text[row] = nullptr;
     }
-    return AddRow();
-   
+    try
+    {
+        text[0] = new char[defaultRowLength];
+    }
+    catch (const std::bad_alloc&)
+    {
+        printf("Allocation failed");
+        return -1;
+    }
+    totalRowCounter = 0;  
+
+    text[0][0] = '\0';
+    SetCursorPosition(0, 0);
+
+    return 0;
 }
 
 
@@ -81,25 +94,26 @@ int Buffer::AddRow()
     int curRow = curCursor->GetRow();
     int curColumn = curCursor->GetColumn();
 
-    if (curRow >= defaultRowNum - 1 && totalRowCounter >= defaultRowNum - 1)
+    if (curRow >= defaultRowNum - 1 || totalRowCounter >= defaultRowNum - 1 || curColumn < 0 || curColumn >= defaultRowLength)
     {
-        printf("The buffer is too small\n");
+        printf(">>The buffer is too small\n");
         return -1;
     }
+
+    char* buffer;
+    try
+    {
+        buffer = new char[defaultRowLength];
+        buffer[0] = '\0';
+    }
+    catch (const std::exception&)
+    {
+        printf(">>Allocation failed\n");
+        return -1;
+    }
+
     if (curRow < totalRowCounter)  // need to do resize
     {
-        char* buffer;
-        try
-        {
-            buffer = new char[defaultRowLength];
-            buffer[0] = '\0';
-        }
-        catch (const std::exception&)
-        {
-            printf("Allocation failed");
-            return -1;
-        }
-
         totalRowCounter++;
         
         try
@@ -109,8 +123,9 @@ int Buffer::AddRow()
         }
         catch (const std::bad_alloc&)
         {
-            printf("Allocation failed");
+            printf(">>Allocation failed\n");
             totalRowCounter--;
+            delete[] buffer;
             return -1;
         }
 
@@ -119,6 +134,8 @@ int Buffer::AddRow()
             strcpy_s(buffer, defaultRowLength, text[rowIndex]);
             strcpy_s(text[rowIndex + 1], defaultRowLength, buffer);
         }
+
+        text[curRow + 1][0] = '\0';
     }
 
     else  // resize is not needed
@@ -131,17 +148,30 @@ int Buffer::AddRow()
         catch (const std::bad_alloc&)
         {
             printf("Allocation failed");
+            delete[] buffer;
             return -1;
         }
         totalRowCounter++;
     }
-    
-    // тут нам треба зробити перенос строки якщо курсор не в кінці строки 
-    text[curRow + 1][0] = '\0';
 
-    curCursor->SetRow(curRow + 1);
-    curCursor->SetColumn(0);
+    if (curColumn < strlen(text[curRow]))   // need to move text to another row
+    {
+        buffer[0] = '\0';
+        for (int columnIndex = curColumn; columnIndex <= strlen(text[curRow]); columnIndex++)
+        {
+            char curSymbol = text[curRow][columnIndex];
+            strcat_s(buffer, defaultRowLength, &curSymbol);
+        }
+        text[curRow][curColumn] = '\0';
+        strcat_s(text[curRow + 1], defaultRowLength, buffer);
 
+    }
+    else if (curColumn == strlen(text[curRow]))  // no need to move text, only move cursor
+    {    
+        SetCursorPosition(curRow + 1, 0);
+    }
+
+    delete[] buffer;
     return 0;
 }
 
