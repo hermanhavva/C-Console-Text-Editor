@@ -5,27 +5,27 @@
 #include "Buffer Class.cpp"
 
 
-FILE* filePtr = NULL;
-const int ROWSIZE = 150;
-const int BUFFERSIZE = 256;
-const int COMMANDSIZE = 10;
+FILE*  filePtr = NULL;
+const  int ROWSIZE = 150;
+const  int BUFFERSIZE = 256;
+const  int COMMANDSIZE = 10;
 char** buffer = NULL;
-int bufferRowCounter = -1;  // default value is -1 empty buffer (no rows)
+int	   bufferRowCounter = -1;  // default value is -1 empty buffer (no rows)
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 void HandleUserExit(char*);
-int HandleAppend(char*);
-int HandleNewLine();
-int HandleSaveToFile(char*);
-int HandleLoadFromFile(char*);
+int  HandleAppend(char*);
+int  HandleNewLine();
+int  HandleSaveToFile(char*);
+int  HandleLoadFromFile(char*);
 void HandlePrintCurrent();
-int HandleInsert();
+int  HandleInsert();
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
 void AllocFailureProgTermination();
-int RemoveEndNewLine(char*);
-void ExecuteCommand(enum Mode);
+int  RemoveEndNewLine(char*);
+void ExecuteCommand(enum Mode, Buffer buffer);
 void PrintMainMenu();
 enum Mode GetUserCommand();
 /*
@@ -59,77 +59,73 @@ int main()
 int main() 
 {
 	Buffer* buffer = new Buffer();
-	char* input = new char[10];
+	char* input = new char[100];
 	input[0] = '\0';
-	strcpy_s(input, 10, "hello");
+	strcpy_s(input, 100, "hello");
 	buffer->Append(input);
 	buffer->AddRow();
 	strcpy_s(input, 10, "2 row");
-	
+	char* str = new char [10];
+	strcpy_s(str, 10, "ello");
 	buffer->Append(input);
-	buffer->SetCursorPosition(1, 1);
+	buffer->SetCursorPosition(0, 1);
 	buffer->AddRow();
-	buffer->PrintCurrent();
+	buffer->SetCursorPosition(1, 1); 
+	buffer->PrintCurrent();  
+	buffer->SearchSubstrPos(str);
+	buffer->AddRow();
+	fopen_s(&filePtr,"hello.txt", "a+");
 
-	delete input;
+	buffer->LoadFromFile(filePtr);
+	buffer->Append(input);
+	buffer->SaveToFile(filePtr);
+	fclose(filePtr);
+	buffer->PrintCurrent();  
+
+	delete[] str;
+	delete[] input;
 	delete buffer;
 }
 
-void HandleUserExit(char* input)
+void HandleUserExit(char* input, Buffer* buffer)
 {
 	printf(">>exiting\n");
 	CloseFile(filePtr);
-	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
-	free(input);
+	delete buffer;
+	delete[] input;
 	Sleep(100);
 	exit(0);
 }
 
-int HandleAppend(char* input)
+int HandleAppend(char* input, Buffer buffer)
 {
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);  // removing '\n'
 
-	if (GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) > (int)strlen(input)) {
-		strcat_s(buffer[bufferRowCounter], ROWSIZE - 1, input);  // ROWSIZE-1 for keeping place for '\n'
+	if (buffer.Append(input) == 0) 
+	{
 		printf(">>success\n");
 		return 0;
 	}
 	else
 	{
-		printf(">>Error, buffer too small, start a newline\n");
+		printf(">>failure\n");
 		return -1;
 	}
 }
 
-int HandleNewLine()
+int HandleNewLine(Buffer buffer)
 {
-	if (bufferRowCounter < BUFFERSIZE - 1)
+	if (buffer.AddRow() == 0)
 	{
-		const int nullTerminationIndex = strlen(buffer[bufferRowCounter]);
-		if (nullTerminationIndex >= ROWSIZE && nullTerminationIndex < ROWSIZE + 30 - 1)  // reallocation was in place
-		{
-			buffer[bufferRowCounter][nullTerminationIndex] = '\n';
-			buffer[bufferRowCounter][nullTerminationIndex + 1] = '\0';
-		}
-
-		else if (nullTerminationIndex < ROWSIZE - 1) 
-		{
-			buffer[bufferRowCounter][nullTerminationIndex] = '\n';
-			buffer[bufferRowCounter][nullTerminationIndex + 1] = '\0';
-		}
-	
-		AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
 		printf(">>success\n");
 		return 0;
 	}
-	else
-		printf("Unable to start a new line(buffer is full)");
-
+	printf(">>failure\n");
 	return -1;
 }
 
-int HandleSaveToFile(char* input)
+int HandleSaveToFile(char* input, Buffer buffer)
 {
 	errno_t err;  // to track the execution of fopen_s()
 	printf("\nEnter the filename: ");
@@ -137,20 +133,27 @@ int HandleSaveToFile(char* input)
 	RemoveEndNewLine(input);  // removing '\n'
 
 	err = fopen_s(&filePtr, input, "a+");
-	if (err != 0 || filePtr == NULL)  // returns 0 if successful
+	if (err != 0 || filePtr == nullptr)  // returns 0 if successful
 	{
-		printf("\nCould not open the file");
+		printf("\nCould not open the file >>failure");
 		return -1;
 	}
-	WriteToFile(filePtr, buffer, BUFFERSIZE, ROWSIZE, bufferRowCounter);
+	if (buffer.SaveToFile(filePtr) == -1)  // BETTER PUT A BOOL flag and make methods bool functions
+	{
+		printf(">>failure\n");
+		CloseFile(filePtr);
+		filePtr = nullptr;
+		return -1;
+	}
+	
 	CloseFile(filePtr);
-	filePtr = NULL;
+	filePtr = nullptr;
 	printf(">>success\n");
 	return 0;
 
 }
 
-int HandleLoadFromFile(char* input)
+int HandleLoadFromFile(char* input, Buffer buffer)
 {
 	errno_t err;  // to track the execution of fopen_s() 
 	printf("\nCurrent text will be deleted, 1 - continue, 0 - cancel:\n");
@@ -169,35 +172,27 @@ int HandleLoadFromFile(char* input)
 		printf("\nCould not open the file\n");
 		return -1;
 	}
-	switch (LoadFromFile(filePtr, buffer, &bufferRowCounter, BUFFERSIZE, ROWSIZE))
+	switch (buffer.LoadFromFile(filePtr))
 	{
 	case 0:
 		printf(">>success\n");
 		CloseFile(filePtr);
-		filePtr = NULL;
+		filePtr = nullptr;
 		return 0;
 	case -1:
 		printf(">>failure\n");
 		CloseFile(filePtr);
-		filePtr = NULL;
+		filePtr = nullptr;
 		return -1;
 	default:
 		printf(">>failure\n");
 		CloseFile(filePtr);
-		filePtr = NULL;
+		filePtr = nullptr;
 		return -1;
 	}
-
 }
 
-void HandlePrintCurrent() 
-{
-	printf("Current text: \n________________________________\n");
 
-	for (int row = 0; row <= bufferRowCounter; row++)
-		printf("%s", buffer[row]);
-	printf("\n");
-}
 
 int HandleInsert()
 {
@@ -283,32 +278,13 @@ int HandleInsert()
 	return 0;
 }
 
-int HandleSearch(char* input) 
+int HandleSearch(char* input, Buffer buffer) 
 {
 	printf("Enter the substring to look for: ");
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);
-
-	printf("It can be found on positions(row|column): ");
-	for (unsigned int row = 0; row <= bufferRowCounter; row++) 
-	{
-		for (unsigned int column = 0; column < strlen(buffer[row]); column++) 
-		{
-			BOOL ifPresent = TRUE;
-			if (buffer[row][column] == input[0])  // if first elements are the same
-			{
-				for (unsigned int inputIndex = 1; inputIndex < strlen(input); inputIndex++) 
-				{
-					if (buffer[row][column + inputIndex] != input[inputIndex])
-						ifPresent = FALSE;
-				}
-				if (ifPresent) 
-					printf("%d|%d; ", row, column);
-				
-			}
-		}
-	}
-	printf("\n");
+	buffer.SearchSubstrPos(input);
+	
 	return 0;
 }
 enum Mode
@@ -361,41 +337,46 @@ int RemoveEndNewLine(char* string)
 	return -1;
 }
 
-void ExecuteCommand(enum Mode command)
+void ExecuteCommand(enum Mode command, Buffer buffer)
 {
-	char* input = (char*)malloc(sizeof(char) * ROWSIZE);
-	if (input == NULL)
+	char* input;
+	try
+	{
+		char* input = new char[ROWSIZE];
+	}
+	catch (const std::exception&)
+	{
 		AllocFailureProgTermination();
+	}
+		
 
 	switch (command)
 	{
 	case USEREXIT:
-		HandleUserExit(input);
+		HandleUserExit(input, &buffer);
 		break;
 
 	case APPEND:
-		HandleAppend(input);
+		HandleAppend(input, buffer);
 		break;
 
 	case NEWLINE:
-		HandleNewLine();
+		HandleNewLine(buffer);
 		break;
 
 	case SAVETOFILE:  
-		HandleSaveToFile(input);
+		HandleSaveToFile(input, buffer);
 		break;
 
 	case LOADFROMFILE:
-		if(HandleLoadFromFile(input) == -1)  // problem reading the file
+		if(HandleLoadFromFile(input, buffer) == -1)  // problem reading the file
 		{
-			FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
-			InitializeBuffer(&buffer, BUFFERSIZE);
-			AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
+			buffer.FlushText();  
 		}
 		break;
 
 	case PRINTCURRENT:
-		HandlePrintCurrent();
+		buffer.PrintCurrent();
 		break;
 
 	case INSERT:
@@ -414,7 +395,8 @@ void ExecuteCommand(enum Mode command)
 		break;
 
 	}
-	free(input);
+	delete[] input;
+	input = nullptr;
 }
 
 void PrintMainMenu()
