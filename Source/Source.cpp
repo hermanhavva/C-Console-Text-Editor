@@ -20,10 +20,11 @@ int  HandleSaveToFile(char*, Buffer*);
 int  HandleLoadFromFile(char*, Buffer*);
 void HandlePrintCurrent(Buffer*);
 int  HandleInsert(Buffer*);
+int  HandleSetCursor(Buffer*);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
-void AllocFailureProgTermination(Buffer*);
+//void AllocFailureProgTermination(Buffer*);
 int  RemoveEndNewLine(char*);
 void ExecuteCommand(enum Mode, Buffer*, bool*);
 void PrintMainMenu(Buffer*);
@@ -49,7 +50,7 @@ int main()
 		ExecuteCommand(command, buffer, &ifContinue);
 	}
 	
-	buffer->CloseFile(filePtr);
+	CloseFile(filePtr);
 	delete buffer;
 
 	Sleep(100);
@@ -92,7 +93,7 @@ int main()
 void HandleUserExit(char* input, Buffer* buffer)
 {
 	printf(">>exiting\n");
-	buffer->CloseFile(filePtr);
+	CloseFile(filePtr);
 	
 	delete buffer;
 	buffer = nullptr;
@@ -148,12 +149,12 @@ int HandleSaveToFile(char* input, Buffer* buffer)
 	if (buffer->SaveToFile(filePtr) == -1)  // BETTER PUT A BOOL flag and make methods bool functions
 	{
 		printf(">>failure\n");
-		buffer->CloseFile(filePtr);
+		CloseFile(filePtr);
 		filePtr = nullptr;
 		return -1;
 	}
 	
-	buffer->CloseFile(filePtr);
+	CloseFile(filePtr);
 	filePtr = nullptr;
 	printf(">>success\n");
 	return 0;
@@ -183,12 +184,12 @@ int HandleLoadFromFile(char* input, Buffer* buffer)
 	{
 	case 0:
 		printf(">>success\n");
-		buffer->CloseFile(filePtr);
+		CloseFile(filePtr);
 		filePtr = nullptr;
 		return 0; 
 	default:
 		printf(">>failure\n");
-		buffer->CloseFile(filePtr);
+		CloseFile(filePtr);
 		buffer->FlushText();
 		filePtr = nullptr;
 		return -1;
@@ -197,88 +198,92 @@ int HandleLoadFromFile(char* input, Buffer* buffer)
 
 
 
-int HandleInsert()
+int HandleInsert(Buffer* buffer)
 {
-	int row, column;  
-	const int offset = 30;
-	char* input = (char*)malloc(sizeof(char) * (ROWSIZE - 1));
-	
-	printf("\nRow for insertion: ");
-	scanf_s(" %u", &row);
-	printf("\nColumn for insertion: ");
-	scanf_s(" %u", &column);
-	fgets(input, ROWSIZE, stdin);  // just to get '\n' out of stdin buffer
+	const int inputSize = buffer->GetRowSize();
 
-	printf("String to insert: ");
+	char* input = nullptr; 
+	try
+	{
+		input = new char[inputSize];
+	} 
+	catch (const std::bad_alloc&)
+	{
+		AllocFailureProgTermination(buffer, nullptr);
+	}
+	
+	Cursor curCursor = buffer->GetCurCursor();  // returns a copy
+
+	printf("String to insert at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);  // for omitting '\n'
 
-	if (row > bufferRowCounter || column > ROWSIZE) {
-		printf(">>Row/Column index too big (might use newline first)\n");
+	if (buffer->InsertAtCursorPos(input) == -1)
+	{
+		printf("<<failure\n");
+	}
+	else
+	{
+		printf("<<success\n");
+	}
+
+	delete[] input;
+
+	return 0;
+}
+
+int HandleInsertReplace(Buffer* buffer)
+{
+	Cursor curCursor = buffer->GetCurCursor();
+	char* input = nullptr;
+	int inputSize = buffer->GetRowSize();
+	try
+	{
+		input = new char[inputSize];
+	}
+	catch (const std::bad_alloc&)
+	{
+		AllocFailureProgTermination(buffer, nullptr);
+	}
+
+	printf("Enter the message to insert at position %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	fgets(input, inputSize, stdin);
+	RemoveEndNewLine(input);
+
+	if (buffer->InsertReplaceAtCursorPos(input) == -1)
+	{
+		delete[] input;
+		printf(">>failure\n");
 		return -1;
-	}
-	int rowTextLength = strlen(buffer[row]);  // on this index there is '\0'
-	int insertTextLength = strlen(input);
-	int curRowMaxSize = ROWSIZE;  // size is dynamic 
-
-	if ((insertTextLength + rowTextLength + 2) - curRowMaxSize > 0 && (insertTextLength + rowTextLength + 2) - curRowMaxSize < offset)
-	{   // the logic can handle +30 expansion, but not more
-		buffer[row] = (char*)realloc(buffer[row], sizeof(char) * (curRowMaxSize + offset));
-
-		if (buffer[row] == NULL)
-		//	AllocFailureProgTermination(buffer);
-
-		curRowMaxSize += offset;
-	}
-	else if ((insertTextLength + rowTextLength + 2) - curRowMaxSize >= offset)
-	{
-		printf(">>The row is full or message too big to insert\n");
-		return -1;
-	}
-
-	if ((rowTextLength + 1) < column)  // add spaces
-	{
-
-		for (int colIndex = rowTextLength; colIndex < column - 1; colIndex++)  
-			buffer[row][colIndex] = ' ';  
-
-		buffer[row][column - 1] = '\0';
-		strcat_s(buffer[row], curRowMaxSize - 1, input);
-	
-		if (row > bufferRowCounter)  // so there is '\n' and we need to transfer it to the end
-		{
-			int curLength = strlen(buffer[row]);
-			buffer[row][rowTextLength - 1] = ' ';
-			buffer[row][curLength] = '\n';
-			buffer[row][curLength + 1] = '\0';
-		}
-	}
-	else if ((rowTextLength + 1) > column)
-	{
-		char* addBuffer = (char*)malloc(sizeof(char) * curRowMaxSize - 1);
-		addBuffer[0] = '\0';
-		char ch = '0';
-		for (int colIndex = column; colIndex < rowTextLength; colIndex++)  
-		{
-			ch = buffer[row][colIndex];
-			strncat_s(addBuffer, curRowMaxSize - 1, &ch, 1);  // one symbol at a time
-
-		}
-		buffer[row][column] = '\0';
- 
-		strcat_s(buffer[row], curRowMaxSize - 1, input);
-		strcat_s(buffer[row], curRowMaxSize - 1, addBuffer);  
-
-		free(addBuffer);
-	}
-	else  // only strcat
-	{
-		strcat_s(buffer[row], curRowMaxSize - 1, input);
 	}
 	printf(">>success\n");
+	delete[] input;
 
-	free(input);
+	return 0;  
+}
+
+int HandleSetCursor(Buffer* buffer)
+{
+	int row = 0; 
+	int column = 0;
+	char* input = new char[10];
+
+	printf("\nEnter the Row: ");
+
+	scanf_s(" %d", &row);
+	printf("Enter the Column: ");
+	scanf_s(" %d", &column);
+	
+	fgets(input, 10, stdin);  // '\n' to get out of the in buffer
+	delete[] input; 
+	if (buffer->SetCursorPosition(row, column) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
 	return 0;
+	
 }
 
 int HandleSearch(char* input, Buffer* buffer) 
@@ -327,7 +332,6 @@ BOOL WINAPI ConsoleHandler(DWORD signal) {
 }
 
 
-
 int RemoveEndNewLine(char* string)
 {
 	int lenght = strlen(string);
@@ -345,17 +349,18 @@ int RemoveEndNewLine(char* string)
 void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 {
 	char* input = nullptr;
+
 	try
 	{
 		input = new char[ROWSIZE];
 	}
 	catch (const std::bad_alloc&)
 	{
-		buffer->AllocFailureProgTermination(nullptr);
+		AllocFailureProgTermination(buffer, nullptr);
 	}
 		
 
-	switch (command)
+	switch (command) 
 	{
 	case USEREXIT:
 		*ifContinue = false;
@@ -383,7 +388,15 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 		break;
 
 	case INSERT:
-		//HandleInsert();
+		HandleInsert(buffer); 
+		break;
+
+	case INSERTREPLACE:
+		HandleInsertReplace(buffer);
+		break; 
+
+	case SETCURSOR:
+		HandleSetCursor(buffer);
 		break;
 
 	case SEARCH:
@@ -397,18 +410,21 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 	case UNDEFINED:
 		break;
 
-	}
+	} 
 	delete[] input;
 	input = nullptr;
 }
 
 void PrintMainMenu(Buffer* buffer)
 {
-	int curLength = buffer->GetCurRowRemainLength() - 1;
+	int curLength = buffer->GetCurRowRemainLength();
 	printf("________________________________\n");
-	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit, 1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current,\n6 - insert, 7 - search, 8 - clean screen;\n", curLength);
+	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit,\t1 - append,\t2 - newline,\t"
+		"3 - save to a file,\t4 - load from file,\t5 - print current,\n6 - insert,\t7 - insert & replace,\t\t"
+		"8 - search,\t\t9 - set cursor pos,\t10 - delete,\n"
+		"11 - undo,\t12 - redo,\t13 - cut,\t14 - copy,\t\t15 - paste;\t\t16 - clean screen\n", curLength);
 }
-
+ 
 enum Mode GetUserCommand(Buffer* buffer)
 {
 	printf("Enter number: ");
@@ -420,7 +436,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 	}
 	catch (const std::bad_alloc&)
 	{
-		buffer->AllocFailureProgTermination(nullptr);
+		AllocFailureProgTermination(buffer, nullptr);
 	}
 
 	fgets(input, COMMANDSIZE, stdin);
