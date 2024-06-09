@@ -1,11 +1,11 @@
 ﻿#include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include "FileLogic.cpp"
 #include "Buffer Class.cpp"
 
 
-FILE*  filePtr = NULL;
+
+FILE*  filePtr = nullptr;
 const  int ROWSIZE = 150;
 const  int BUFFERSIZE = 256;
 const  int COMMANDSIZE = 10;
@@ -13,24 +13,25 @@ char** buffer = NULL;
 int	   bufferRowCounter = -1;  // default value is -1 empty buffer (no rows)
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
-void HandleUserExit(char*);
-int  HandleAppend(char*);
-int  HandleNewLine();
-int  HandleSaveToFile(char*);
-int  HandleLoadFromFile(char*);
-void HandlePrintCurrent();
-int  HandleInsert();
+void HandleUserExit(char*, Buffer*);
+int  HandleAppend(char*, Buffer*);
+
+int  HandleSaveToFile(char*, Buffer*);
+int  HandleLoadFromFile(char*, Buffer*);
+void HandlePrintCurrent(Buffer*);
+int  HandleInsert(Buffer*);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
-void AllocFailureProgTermination();
+void AllocFailureProgTermination(Buffer*);
 int  RemoveEndNewLine(char*);
-void ExecuteCommand(enum Mode, Buffer buffer);
-void PrintMainMenu();
-enum Mode GetUserCommand();
-/*
+void ExecuteCommand(enum Mode, Buffer*, bool*);
+void PrintMainMenu(Buffer*);
+enum Mode GetUserCommand(Buffer* buffer);
+
 int main()
 {
+
 	if (!SetConsoleCtrlHandler(ConsoleHandler, TRUE)) {
 		fprintf(stderr, "Failed to set control handler\n");
 		return EXIT_FAILURE;
@@ -38,24 +39,25 @@ int main()
 	SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
 	system("cls");
 	
-	InitializeBuffer(&buffer, BUFFERSIZE);
-	AddRow(&buffer, BUFFERSIZE, &bufferRowCounter, ROWSIZE);
+	Buffer* buffer = new Buffer();
+	bool ifContinue = true;
 
-	while (TRUE)
+	while (ifContinue)
 	{
-		PrintMainMenu();
-		enum Mode command = GetUserCommand();
-		ExecuteCommand(command);
+		PrintMainMenu(buffer);
+		enum Mode command = GetUserCommand(buffer);
+		ExecuteCommand(command, buffer, &ifContinue);
 	}
 	
-	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
-	CloseFile(filePtr);
+	buffer->CloseFile(filePtr);
+	delete buffer;
 
 	Sleep(100);
+	
 
 	return 0; 
-}*/ 
-
+}
+/*
 int main() 
 {
 	Buffer* buffer = new Buffer();
@@ -78,31 +80,36 @@ int main()
 
 	buffer->LoadFromFile(filePtr);
 	buffer->Append(input);
-	buffer->SaveToFile(filePtr);
+	buffer->SaveToFile(filePtr); 
 	fclose(filePtr);
 	buffer->PrintCurrent();  
 
 	delete[] str;
 	delete[] input;
 	delete buffer;
-}
+} */
 
 void HandleUserExit(char* input, Buffer* buffer)
 {
 	printf(">>exiting\n");
-	CloseFile(filePtr);
+	buffer->CloseFile(filePtr);
+	
 	delete buffer;
+	buffer = nullptr;
+	
 	delete[] input;
+	input = nullptr;
+	
 	Sleep(100);
 	exit(0);
 }
 
-int HandleAppend(char* input, Buffer buffer)
+int HandleAppend(char* input, Buffer* buffer)
 {
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);  // removing '\n'
 
-	if (buffer.Append(input) == 0) 
+	if (buffer->Append(input) == 0) 
 	{
 		printf(">>success\n");
 		return 0;
@@ -114,9 +121,9 @@ int HandleAppend(char* input, Buffer buffer)
 	}
 }
 
-int HandleNewLine(Buffer buffer)
+int HandleNewLine(Buffer* buffer)
 {
-	if (buffer.AddRow() == 0)
+	if (buffer->AddRow() == 0)
 	{
 		printf(">>success\n");
 		return 0;
@@ -125,7 +132,7 @@ int HandleNewLine(Buffer buffer)
 	return -1;
 }
 
-int HandleSaveToFile(char* input, Buffer buffer)
+int HandleSaveToFile(char* input, Buffer* buffer)
 {
 	errno_t err;  // to track the execution of fopen_s()
 	printf("\nEnter the filename: ");
@@ -138,22 +145,22 @@ int HandleSaveToFile(char* input, Buffer buffer)
 		printf("\nCould not open the file >>failure");
 		return -1;
 	}
-	if (buffer.SaveToFile(filePtr) == -1)  // BETTER PUT A BOOL flag and make methods bool functions
+	if (buffer->SaveToFile(filePtr) == -1)  // BETTER PUT A BOOL flag and make methods bool functions
 	{
 		printf(">>failure\n");
-		CloseFile(filePtr);
+		buffer->CloseFile(filePtr);
 		filePtr = nullptr;
 		return -1;
 	}
 	
-	CloseFile(filePtr);
+	buffer->CloseFile(filePtr);
 	filePtr = nullptr;
 	printf(">>success\n");
 	return 0;
 
 }
 
-int HandleLoadFromFile(char* input, Buffer buffer)
+int HandleLoadFromFile(char* input, Buffer* buffer)
 {
 	errno_t err;  // to track the execution of fopen_s() 
 	printf("\nCurrent text will be deleted, 1 - continue, 0 - cancel:\n");
@@ -172,21 +179,17 @@ int HandleLoadFromFile(char* input, Buffer buffer)
 		printf("\nCould not open the file\n");
 		return -1;
 	}
-	switch (buffer.LoadFromFile(filePtr))
+	switch (buffer->LoadFromFile(filePtr))
 	{
 	case 0:
 		printf(">>success\n");
-		CloseFile(filePtr);
+		buffer->CloseFile(filePtr);
 		filePtr = nullptr;
-		return 0;
-	case -1:
-		printf(">>failure\n");
-		CloseFile(filePtr);
-		filePtr = nullptr;
-		return -1;
+		return 0; 
 	default:
 		printf(">>failure\n");
-		CloseFile(filePtr);
+		buffer->CloseFile(filePtr);
+		buffer->FlushText();
 		filePtr = nullptr;
 		return -1;
 	}
@@ -223,7 +226,7 @@ int HandleInsert()
 		buffer[row] = (char*)realloc(buffer[row], sizeof(char) * (curRowMaxSize + offset));
 
 		if (buffer[row] == NULL)
-			AllocFailureProgTermination();
+		//	AllocFailureProgTermination(buffer);
 
 		curRowMaxSize += offset;
 	}
@@ -278,12 +281,12 @@ int HandleInsert()
 	return 0;
 }
 
-int HandleSearch(char* input, Buffer buffer) 
+int HandleSearch(char* input, Buffer* buffer) 
 {
 	printf("Enter the substring to look for: ");
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);
-	buffer.SearchSubstrPos(input);
+	buffer->SearchSubstrPos(input);
 	
 	return 0;
 }
@@ -296,9 +299,18 @@ enum Mode
 	LOADFROMFILE = 4,
 	PRINTCURRENT = 5,
 	INSERT = 6,
-	CLS = 7,
+	INSERTREPLACE = 7,
 	SEARCH = 8,
-	UNDEFINED = 9
+	SETCURSOR = 9,
+	DELETESTR = 10,
+	UNDO = 11,
+	REDO = 12,
+	CUT = 13,
+	COPY = 14,
+	PASTE = 15,
+	CLS = 16,
+	UNDEFINED
+
 };
 
 BOOL WINAPI ConsoleHandler(DWORD signal) {
@@ -314,14 +326,7 @@ BOOL WINAPI ConsoleHandler(DWORD signal) {
 	return TRUE;
 }
 
-void AllocFailureProgTermination()
-{
-	perror("Error allocating memory");
-	FreeBuffer(buffer, BUFFERSIZE, ROWSIZE, &bufferRowCounter);
-	CloseFile(filePtr);
-	Sleep(1000);
-	exit(EXIT_FAILURE);
-}
+
 
 int RemoveEndNewLine(char* string)
 {
@@ -337,23 +342,24 @@ int RemoveEndNewLine(char* string)
 	return -1;
 }
 
-void ExecuteCommand(enum Mode command, Buffer buffer)
+void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 {
-	char* input;
+	char* input = nullptr;
 	try
 	{
-		char* input = new char[ROWSIZE];
+		input = new char[ROWSIZE];
 	}
-	catch (const std::exception&)
+	catch (const std::bad_alloc&)
 	{
-		AllocFailureProgTermination();
+		buffer->AllocFailureProgTermination(nullptr);
 	}
 		
 
 	switch (command)
 	{
 	case USEREXIT:
-		HandleUserExit(input, &buffer);
+		*ifContinue = false;
+		HandleUserExit(input, buffer);
 		break;
 
 	case APPEND:
@@ -369,22 +375,19 @@ void ExecuteCommand(enum Mode command, Buffer buffer)
 		break;
 
 	case LOADFROMFILE:
-		if(HandleLoadFromFile(input, buffer) == -1)  // problem reading the file
-		{
-			buffer.FlushText();  
-		}
+		HandleLoadFromFile(input, buffer);  // problem reading the file
 		break;
 
 	case PRINTCURRENT:
-		buffer.PrintCurrent();
+		buffer->PrintCurrent();
 		break;
 
 	case INSERT:
-		HandleInsert();
+		//HandleInsert();
 		break;
 
 	case SEARCH:
-		HandleSearch(input);
+		HandleSearch(input, buffer);
 		break;
 
 	case CLS:
@@ -399,64 +402,110 @@ void ExecuteCommand(enum Mode command, Buffer buffer)
 	input = nullptr;
 }
 
-void PrintMainMenu()
+void PrintMainMenu(Buffer* buffer)
 {
-	int curLength = GetRowRemainLength(buffer, bufferRowCounter, ROWSIZE) - 1;
+	int curLength = buffer->GetCurRowRemainLength() - 1;
 	printf("________________________________\n");
 	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit, 1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current,\n6 - insert, 7 - search, 8 - clean screen;\n", curLength);
 }
 
-enum Mode GetUserCommand()
+enum Mode GetUserCommand(Buffer* buffer)
 {
 	printf("Enter number: ");
 	enum Mode command;
+	char* input = nullptr;
+	try
+	{
+		input = new char[COMMANDSIZE];
+	}
+	catch (const std::bad_alloc&)
+	{
+		buffer->AllocFailureProgTermination(nullptr);
+	}
 
-	char* input = (char*)malloc(COMMANDSIZE * sizeof(char));
 	fgets(input, COMMANDSIZE, stdin);
 	RemoveEndNewLine(input);
 
-	if (strlen(input) > 1) 
+	if (strlen(input) == 1) 
+	{
+		switch (input[0])
+		{
+		case '0':
+			command = USEREXIT;
+			break;
+		case '1':
+			command = APPEND;
+			break;
+		case '2':
+			command = NEWLINE;
+			break;
+		case '3':
+			command = SAVETOFILE;
+			break;
+		case '4':
+			command = LOADFROMFILE;
+			break;
+		case '5':
+			command = PRINTCURRENT;
+			break;
+		case '6':
+			command = INSERT;
+			break;
+		case '7':
+			command = INSERTREPLACE;
+			break;
+		case '8':
+			command = SEARCH;
+			break;
+		case '9':
+			command = SETCURSOR;
+			break;
+		default:
+			printf(">>The command is not implemmented\n");
+			command = UNDEFINED;
+			break;
+		}
+	}
+	else if (strlen(input) == 2 && (int)input[0] >= 48 && (int)input[0] <= 57)
+	{
+		switch (input[1])
+		{
+		case '0':
+			command = DELETESTR;
+			break; 
+		case '1':
+			command = UNDO;
+			break;
+		case '2':
+			command = REDO;
+			break;
+		case '3':
+			command = CUT;
+			break;
+		case '4':
+			command = COPY;
+			break;
+		case '5':
+			command = PASTE;
+			break;
+		case '6':
+			command = CLS;
+			break;
+		default:
+			command = UNDEFINED;
+			printf(">>The command is not implemmented\n");
+			break;
+		}
+	}
+	else 
 	{
 		printf(">>The command is not implemmented\n");
 		command = UNDEFINED;
 		return command;
 	}
 
-	switch (input[0])
-	{
-	case '0':
-		command = USEREXIT;
-		break;
-	case '1':
-		command = APPEND;
-		break;
-	case '2':
-		command = NEWLINE;
-		break;
-	case '3':
-		command = SAVETOFILE;
-		break;
-	case '4':
-		command = LOADFROMFILE;
-		break;
-	case '5':
-		command = PRINTCURRENT;
-		break;
-	case '6':
-		command = INSERT;
-		break;
-	case '7':
-		command = SEARCH;
-		break;
-	case '8':
-		command = CLS;
-		break;
-	default:  
-		printf(">>The command is not implemmented\n");
-		command = UNDEFINED;
-		break;
-	}
-	free(input);
+	
+	delete[] input;
 	return command;
 }
 

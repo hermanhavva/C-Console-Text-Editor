@@ -1,7 +1,10 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <windows.h>
 #include "Cursor Class.cpp"
+
+
 
 int GetTxtSize1(FILE*);
 
@@ -12,25 +15,30 @@ public:
     ~Buffer();  // destructor 
     int  Append(char*);
     int  AddRow();
-    int  SaveToFile(FILE*); 
+    int  SaveToFile(FILE*);
     int  LoadFromFile(FILE*);
     void PrintCurrent();
     int  InsertAtCursorPos(char*);
     void SearchSubstrPos(char*);
-    int  SetCursorPosition(int, int);
+    void SetCursorPosition(int, int);
     int  MoveCursorToEnd();
-    int  GetCurRowRemainLength();
+    int  GetCurRowRemainLength(); 
     void FlushText();  // sets the buffer to initial state
+    void AllocFailureProgTermination(FILE* filePtr);
+    void CloseFile(FILE*);
 
 private:
     const int defaultRowNum = 256;  // will scale this baby up (no)
     const int defaultRowLength = 150;
    
-    int totalRowCounter = -1;  
+    int     totalRowCounter = -1;  
     Cursor* curCursor = nullptr;
-    char** text = nullptr;
+    char**  text = nullptr;
 
-    int InitializeBuffer();       
+    int InitializeBuffer();    
+    int GetTxtSize(FILE*);
+
+
 };
 
 Buffer::Buffer()  // constructor
@@ -123,11 +131,11 @@ int Buffer::AddRow()
         curColumn       <  0                 || 
         curColumn       >= defaultRowLength)
     {
-        printf("\nThe buffer is too small");  // may be should put out of class
+        printf("\nThe buffer is too small");  
         return -1;
     }
 
-    char* buffer;
+    char* buffer = nullptr;
     try
     {
         buffer = new char[defaultRowLength];
@@ -135,8 +143,7 @@ int Buffer::AddRow()
     }
     catch (const std::exception&)
     {
-        printf(">>Allocation failed\n");
-        return -1;
+        AllocFailureProgTermination(nullptr);
     }
 
     if (curRow < totalRowCounter)  // need to do resize
@@ -150,10 +157,9 @@ int Buffer::AddRow()
         }
         catch (const std::bad_alloc&)
         {
-            printf(">>Allocation failed\n");
             totalRowCounter--;
             delete[] buffer;
-            return -1;
+            AllocFailureProgTermination(nullptr);
         }
 
         for (int rowIndex = totalRowCounter - 1; rowIndex > curRow; rowIndex--) 
@@ -174,9 +180,8 @@ int Buffer::AddRow()
         }
         catch (const std::bad_alloc&)
         {
-            printf("Allocation failed");
             delete[] buffer;
-            return -1;
+            AllocFailureProgTermination(nullptr);
         }
         totalRowCounter++;
     }
@@ -210,17 +215,15 @@ int Buffer::SaveToFile(FILE* filePtr)
     {
         return -1;
     }
-    int textSize = sizeof(char) * defaultRowLength * defaultRowNum + defaultRowNum;  // + defaultRowNum is for '\n'
-    char* textToSave;
+    int textSize = sizeof(char) * defaultRowLength * defaultRowNum + defaultRowNum;  // +defaultRowNum is for '\n'
+    char* textToSave = nullptr;
     try
     {
-        char* textToSave = new char[textSize];
+        textToSave = new char[textSize];
     }
     catch (const std::bad_alloc&)
     {
-        printf("\nError alocating memory");
-        delete[] textToSave;
-        return -1;
+        AllocFailureProgTermination(filePtr);
     }
     textToSave[0] = '\0';
 
@@ -248,8 +251,18 @@ int Buffer::LoadFromFile(FILE* filePtr)
     else
         return -1;
 
-    const int FILESIZE = GetTxtSize1(filePtr);
-    char* textFromTxt = new char [FILESIZE + 2];  // add 2 to make sure it is in the bounds
+    const int FILESIZE = GetTxtSize(filePtr);
+    char* textFromTxt = nullptr;
+
+    try
+    {
+        textFromTxt = new char[FILESIZE + 2];  // add 2 to make sure it is in the bounds
+    }
+    catch (const std::bad_alloc&)
+    {
+        AllocFailureProgTermination(filePtr);
+    }
+    
     fread(textFromTxt, sizeof(char), FILESIZE, filePtr);
     textFromTxt[FILESIZE] = '\0';
 
@@ -260,7 +273,7 @@ int Buffer::LoadFromFile(FILE* filePtr)
 
         // some garbage symbols may appear in textFromTxt so to omit them there is a condition
         if ((int)curSymbol <= 255 && (int)curSymbol > 0) {
-            if (curSymbol == '\n')
+            if (curSymbol == '\n')  // we do not transfer '\n' from file to buffer directly
             {
                 if (AddRow() == -1)
                 {
@@ -268,6 +281,7 @@ int Buffer::LoadFromFile(FILE* filePtr)
                     delete[] textFromTxt;
                     return -1;
                 }
+                continue;
             }
             if (GetCurRowRemainLength() > 1)  // 1 to keep '\0'
             {
@@ -282,7 +296,11 @@ int Buffer::LoadFromFile(FILE* filePtr)
             }
         }
         else if (curSymbol == '\0')
+        {
+            MoveCursorToEnd();
             break;
+        }
+            
     }
     delete[] textFromTxt;
 
@@ -418,6 +436,32 @@ void Buffer::FlushText()
     SetCursorPosition(0, 0);
     totalRowCounter = 0;
 }
+void Buffer::SetCursorPosition(int row, int column)
+{
+    curCursor->SetRow(row);
+    curCursor->SetColumn(column);
+}
+
+void Buffer::AllocFailureProgTermination(FILE* filePtr)  //     BETTER KEEP THIS AND CloseFile() OUT OF THE CLASS
+{
+    perror("Error allocating memory");
+    CloseFile(filePtr);
+    delete this;
+    
+    Sleep(1000);
+    exit(EXIT_FAILURE);
+}
+
+void Buffer::CloseFile(FILE* filePtr)
+{
+    if (filePtr != NULL && 
+        filePtr != nullptr)
+        fclose(filePtr);
+
+    filePtr = nullptr;
+}
+
+
 int Buffer::GetCurRowRemainLength()  // returns remaining size of the current row
 {
     int remainLength = defaultRowLength;  // by default
@@ -433,22 +477,15 @@ int Buffer::GetCurRowRemainLength()  // returns remaining size of the current ro
     return remainLength;
 }
 
-int GetTxtSize1(FILE* filePtr)
+int Buffer::GetTxtSize(FILE* filePtr)
 {
-    if (filePtr == NULL)
+    if (filePtr == NULL ||
+        filePtr == nullptr)
         return -1;
+
     fseek(filePtr, 0, SEEK_END); // Move the file pointer to the end of the file
     int fileSize = ftell(filePtr); // Get the current file pointer position
     rewind(filePtr); // Reset the file pointer to the beginning of the file
 
     return fileSize;
 }
-
-
-/*
-class Row
-{
-
-
-};
-*/

@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include "BufferLogic.cpp"
-
+/*
 void CloseFile(FILE* filePtr)
 {
-	if (filePtr != NULL)
+	if (filePtr != NULL && filePtr != nullptr)
 		fclose(filePtr);
-	filePtr = NULL;
-}
+	filePtr = nullptr;
+}*/
+/*
 void WriteToFile(FILE* filePtr, 
 				 char** buffer, 
 				 const int BUFFERSIZE, 
@@ -26,18 +26,22 @@ void WriteToFile(FILE* filePtr,
 		fprintf_s(filePtr,"%s", textToWrite);
 		free(textToWrite);
 	}
-}
+}*/
+/*
 int GetTxtSize(FILE* filePtr)
 {
-	if (filePtr == NULL)
+	if (filePtr == NULL || 
+		filePtr == nullptr)
 		return -1;
+
 	fseek(filePtr, 0, SEEK_END); // Move the file pointer to the end of the file
 	int fileSize = ftell(filePtr); // Get the current file pointer position
 	rewind(filePtr); // Reset the file pointer to the beginning of the file
 
 	return fileSize;
 }
-
+*/
+/*
 long LoadFromFile(FILE* filePtr, 
 				  char** destBuffer, 
 				  int *bufferRowCounterPtr, 
@@ -92,4 +96,4 @@ long LoadFromFile(FILE* filePtr,
 	
 	return 0;
 }
-
+*/
