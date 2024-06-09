@@ -23,7 +23,7 @@ int  HandleInsert(Buffer*);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
-void AllocFailureProgTermination(Buffer*);
+//void AllocFailureProgTermination(Buffer*);
 int  RemoveEndNewLine(char*);
 void ExecuteCommand(enum Mode, Buffer*, bool*);
 void PrintMainMenu(Buffer*);
@@ -49,7 +49,7 @@ int main()
 		ExecuteCommand(command, buffer, &ifContinue);
 	}
 	
-	buffer->CloseFile(filePtr);
+	CloseFile(filePtr);
 	delete buffer;
 
 	Sleep(100);
@@ -92,7 +92,7 @@ int main()
 void HandleUserExit(char* input, Buffer* buffer)
 {
 	printf(">>exiting\n");
-	buffer->CloseFile(filePtr);
+	CloseFile(filePtr);
 	
 	delete buffer;
 	buffer = nullptr;
@@ -148,12 +148,12 @@ int HandleSaveToFile(char* input, Buffer* buffer)
 	if (buffer->SaveToFile(filePtr) == -1)  // BETTER PUT A BOOL flag and make methods bool functions
 	{
 		printf(">>failure\n");
-		buffer->CloseFile(filePtr);
+		CloseFile(filePtr);
 		filePtr = nullptr;
 		return -1;
 	}
 	
-	buffer->CloseFile(filePtr);
+	CloseFile(filePtr);
 	filePtr = nullptr;
 	printf(">>success\n");
 	return 0;
@@ -183,12 +183,12 @@ int HandleLoadFromFile(char* input, Buffer* buffer)
 	{
 	case 0:
 		printf(">>success\n");
-		buffer->CloseFile(filePtr);
+		CloseFile(filePtr);
 		filePtr = nullptr;
 		return 0; 
 	default:
 		printf(">>failure\n");
-		buffer->CloseFile(filePtr);
+		CloseFile(filePtr);
 		buffer->FlushText();
 		filePtr = nullptr;
 		return -1;
@@ -345,17 +345,18 @@ int RemoveEndNewLine(char* string)
 void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 {
 	char* input = nullptr;
+
 	try
 	{
 		input = new char[ROWSIZE];
 	}
 	catch (const std::bad_alloc&)
 	{
-		buffer->AllocFailureProgTermination(nullptr);
+		AllocFailureProgTermination(buffer, nullptr);
 	}
 		
 
-	switch (command)
+	switch (command) 
 	{
 	case USEREXIT:
 		*ifContinue = false;
@@ -406,7 +407,10 @@ void PrintMainMenu(Buffer* buffer)
 {
 	int curLength = buffer->GetCurRowRemainLength() - 1;
 	printf("________________________________\n");
-	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit, 1 - append, 2 - newline, 3 - save to a file, 4 - load from file, 5 - print current,\n6 - insert, 7 - search, 8 - clean screen;\n", curLength);
+	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit,\t1 - append,\t2 - newline,\t"
+		"3 - save to a file,\t4 - load from file,\t5 - print current,\n6 - insert,\t7 - insert with replacement,\t"
+		"8 - search,\t9 - set cursor position,\t10 - delete,\n"
+		"11 - undo,\t12 - redo,\t13 - cut,\t14 - copy,\t15 - paste;\n", curLength);
 }
 
 enum Mode GetUserCommand(Buffer* buffer)
@@ -420,7 +424,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 	}
 	catch (const std::bad_alloc&)
 	{
-		buffer->AllocFailureProgTermination(nullptr);
+		AllocFailureProgTermination(buffer, nullptr);
 	}
 
 	fgets(input, COMMANDSIZE, stdin);

@@ -5,8 +5,9 @@
 #include "Cursor Class.cpp"
 
 
-
-int GetTxtSize1(FILE*);
+class Buffer;
+void AllocFailureProgTermination(Buffer*, FILE*);
+void CloseFile(FILE* filePtr);
 
 class Buffer
 {
@@ -24,8 +25,7 @@ public:
     int  MoveCursorToEnd();
     int  GetCurRowRemainLength(); 
     void FlushText();  // sets the buffer to initial state
-    void AllocFailureProgTermination(FILE* filePtr);
-    void CloseFile(FILE*);
+    //void CloseFile(FILE*);
 
 private:
     const int defaultRowNum = 256;  // will scale this baby up (no)
@@ -143,7 +143,7 @@ int Buffer::AddRow()
     }
     catch (const std::exception&)
     {
-        AllocFailureProgTermination(nullptr);
+        AllocFailureProgTermination(this, nullptr);
     }
 
     if (curRow < totalRowCounter)  // need to do resize
@@ -153,14 +153,14 @@ int Buffer::AddRow()
         try
         {
             text[totalRowCounter] = new char[defaultRowLength];
-            text[totalRowCounter][0] = '\0';
         }
         catch (const std::bad_alloc&)
         {
             totalRowCounter--;
             delete[] buffer;
-            AllocFailureProgTermination(nullptr);
+            AllocFailureProgTermination(this, nullptr);
         }
+        text[totalRowCounter][0] = '\0';
 
         for (int rowIndex = totalRowCounter - 1; rowIndex > curRow; rowIndex--) 
         {
@@ -176,13 +176,13 @@ int Buffer::AddRow()
         try
         {
             text[curRow + 1] = new char[defaultRowLength];
-            text[curRow + 1][0] = '\0';
         }
         catch (const std::bad_alloc&)
         {
             delete[] buffer;
-            AllocFailureProgTermination(nullptr);
+            AllocFailureProgTermination(this, nullptr);
         }
+        text[curRow + 1][0] = '\0';
         totalRowCounter++;
     }
 
@@ -223,7 +223,7 @@ int Buffer::SaveToFile(FILE* filePtr)
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(filePtr);
+        AllocFailureProgTermination(this, filePtr);
     }
     textToSave[0] = '\0';
 
@@ -260,7 +260,7 @@ int Buffer::LoadFromFile(FILE* filePtr)
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(filePtr);
+        AllocFailureProgTermination(this, filePtr);
     }
     
     fread(textFromTxt, sizeof(char), FILESIZE, filePtr);
@@ -436,31 +436,12 @@ void Buffer::FlushText()
     SetCursorPosition(0, 0);
     totalRowCounter = 0;
 }
+
 void Buffer::SetCursorPosition(int row, int column)
 {
     curCursor->SetRow(row);
     curCursor->SetColumn(column);
 }
-
-void Buffer::AllocFailureProgTermination(FILE* filePtr)  //     BETTER KEEP THIS AND CloseFile() OUT OF THE CLASS
-{
-    perror("Error allocating memory");
-    CloseFile(filePtr);
-    delete this;
-    
-    Sleep(1000);
-    exit(EXIT_FAILURE);
-}
-
-void Buffer::CloseFile(FILE* filePtr)
-{
-    if (filePtr != NULL && 
-        filePtr != nullptr)
-        fclose(filePtr);
-
-    filePtr = nullptr;
-}
-
 
 int Buffer::GetCurRowRemainLength()  // returns remaining size of the current row
 {
@@ -489,3 +470,23 @@ int Buffer::GetTxtSize(FILE* filePtr)
 
     return fileSize;
 }
+
+void CloseFile(FILE* filePtr)
+{
+    if (filePtr != NULL &&
+        filePtr != nullptr)
+        fclose(filePtr);
+
+    filePtr = nullptr;
+}
+
+void AllocFailureProgTermination(Buffer* buffer, FILE* filePtr)  //     BETTER KEEP THIS AND CloseFile() OUT OF THE CLASS
+{
+    perror("Error allocating memory");
+    CloseFile(filePtr);
+    delete buffer;
+
+    Sleep(1000);
+    exit(EXIT_FAILURE);
+}
+
