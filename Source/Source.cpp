@@ -232,9 +232,34 @@ int HandleInsert(Buffer* buffer)
 	return 0;
 }
 
-int HandleInsertReplace()
+int HandleInsertReplace(Buffer* buffer)
 {
-	return 0;
+	Cursor curCursor = buffer->GetCurCursor();
+	char* input = nullptr;
+	int inputSize = buffer->GetRowSize();
+	try
+	{
+		input = new char[inputSize];
+	}
+	catch (const std::bad_alloc&)
+	{
+		AllocFailureProgTermination(buffer, nullptr);
+	}
+
+	printf("Enter the message to insert at position %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	fgets(input, inputSize, stdin);
+	RemoveEndNewLine(input);
+
+	if (buffer->InsertReplaceAtCursorPos(input) == -1)
+	{
+		delete[] input;
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
+	delete[] input;
+
+	return 0;  
 }
 
 int HandleSetCursor(Buffer* buffer)
@@ -253,7 +278,7 @@ int HandleSetCursor(Buffer* buffer)
 	delete[] input; 
 	if (buffer->SetCursorPosition(row, column) == -1)
 	{
-		printf(">>failure");
+		printf(">>failure\n");
 		return -1;
 	}
 	printf(">>success\n");
@@ -367,7 +392,7 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 		break;
 
 	case INSERTREPLACE:
-		HandleInsertReplace();
+		HandleInsertReplace(buffer);
 		break; 
 
 	case SETCURSOR:

@@ -20,12 +20,13 @@ public:
     int  LoadFromFile(FILE*);
     void PrintCurrent();
     int  InsertAtCursorPos(char*);
+    int  InsertReplaceAtCursorPos(char*);
     void SearchSubstrPos(char*);
     int  SetCursorPosition(int, int);
     int  MoveCursorToEnd();
     int  GetCurRowRemainLength(); 
     void FlushText();  // sets the buffer to initial state
-    int GetRowSize();
+    int  GetRowSize();
     Cursor GetCurCursor();
 
 private:
@@ -142,7 +143,7 @@ int Buffer::AddRow()
         buffer = new char[defaultRowLength];
         buffer[0] = '\0';
     }
-    catch (const std::exception&)
+    catch (const std::bad_alloc&)
     {
         AllocFailureProgTermination(this, nullptr);
     }
@@ -323,8 +324,7 @@ int Buffer::InsertAtCursorPos(char* input)
     int row    = curCursor->GetRow();
     int column = curCursor->GetColumn();
 
-
-    if (row > totalRowCounter || column >= defaultRowLength)   // this might be unnecessary
+    if (column >= defaultRowLength)   // this might be unnecessary
     {
         printf(">>Not enough space (might use newline first)\n");
         return -1;
@@ -335,7 +335,7 @@ int Buffer::InsertAtCursorPos(char* input)
     int curRowMaxSize = defaultRowLength;  
 
     if ((insertTextLength + rowTextLength ) - curRowMaxSize >= 0)
-    {   // the logic can handle +30 expansion, but not more
+    {   
         printf(">>Not enough space (might use newline first)\n");
         return -1;
     }
@@ -355,13 +355,6 @@ int Buffer::InsertAtCursorPos(char* input)
         text[row][column - 1] = '\0';
         strcat_s(text[row], curRowMaxSize, input);
 
-        /*if (row > bufferRowCounter)  // so there is '\n' and we need to transfer it to the end
-        {
-            int curLength = strlen(buffer[row]);
-            buffer[row][rowTextLength - 1] = ' ';
-            buffer[row][curLength] = '\n';
-            buffer[row][curLength + 1] = '\0';
-        }*/
     }
     else if ((rowTextLength /*/ + 1*/) > column)
     {
@@ -385,6 +378,39 @@ int Buffer::InsertAtCursorPos(char* input)
     {
         strcat_s(text[row], curRowMaxSize - 1, input);
     }
+    SetCursorPosition(row, column + insertTextLength);
+    return 0;
+}
+
+int Buffer::InsertReplaceAtCursorPos(char* input)
+{
+    int row     = curCursor->GetRow();
+    int column  = curCursor->GetColumn();
+
+    if (column >= defaultRowLength)   // this might be unnecessary
+    {
+        printf(">>Not enough space (might use newline first)\n");
+        return -1;
+    }
+    int rowTextLength = strlen(text[row]);  // on this index there is '\0'
+    int insertTextLength = strlen(input);
+
+
+    if (column + insertTextLength >= defaultRowLength)  // got to check the edge case
+    {
+        printf(">>Not enough space (might use newline first)\n");
+        return -1;
+    }
+    for (int columnIndex = column; columnIndex < column + insertTextLength; columnIndex++)
+    {
+        char curChar = input[columnIndex - column];
+        text[row][columnIndex] = curChar;
+    }
+    if (column + insertTextLength >= rowTextLength)
+    {
+        text[row][column + insertTextLength] = '\0';
+    }
+    SetCursorPosition(row, strlen(text[row]));
 
     return 0;
 }
