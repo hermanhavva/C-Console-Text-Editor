@@ -46,7 +46,7 @@ int main()
 
 	while (ifContinue)
 	{
-		PrintMainMenu(buffer);
+		PrintMainMenu(buffer);   
 		enum Mode command = GetUserCommand(buffer);
 		ExecuteCommand(command, buffer, &ifContinue);
 	}
@@ -600,7 +600,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 
 	if (command == UNDEFINED)
 	{
-		while ((getchar()) != '\n');
+		while ((getchar()) != '\n');  // to clear the buffer of garbage symbols
 	}
 	
 	delete[] input;

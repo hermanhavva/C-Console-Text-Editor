@@ -331,7 +331,7 @@ void Buffer::PrintCurrent()
                     switch (text[row][column])
                     {
                     case '\0':  // '\0' is not colored
-                        printf(" ");
+                        printf(" \n");
                         break;
                     default:
                         printf("%c", text[row][column]);
@@ -340,7 +340,15 @@ void Buffer::PrintCurrent()
                     SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
                     continue;
                 }
-                printf("%c", text[row][column]);
+                switch (text[row][column])
+                {
+                case '\0':
+                    printf("\n");
+                    break;
+                default:
+                    printf("%c", text[row][column]);
+                    break;
+                }
             }
             continue;
         }
