@@ -22,7 +22,9 @@ public:
     int  InsertAtCursorPos(char*);
     int  InsertReplaceAtCursorPos(char*);
     void SearchSubstrPos(char*);
-    int  DeleteAtCursorPos(unsigned int);
+    int  DeleteAtCursorPos(unsigned int, bool);
+    int  CopyAtCursorPos(unsigned int);
+    int  PasteAtCursorPos();
     int  SetCursorPosition(int, int);
     int  MoveCursorToEnd();
     int  GetCurRowRemainLength(); 
@@ -37,6 +39,7 @@ private:
     int     totalRowCounter = -1;  
     Cursor* curCursor = nullptr;
     char**  text = nullptr;
+    char*   pasteBuffer = nullptr;
 
     int InitializeBuffer();    
     int GetTxtSize(FILE*);
@@ -54,12 +57,14 @@ Buffer::~Buffer()  // destructor
 {
     delete curCursor;
     curCursor = nullptr;
-
-    for (int rowIndex = 0; rowIndex <= totalRowCounter; rowIndex++)
+    if (text != nullptr)
     {
-        delete[] text[rowIndex];
+        for (int rowIndex = 0; rowIndex <= totalRowCounter; rowIndex++)
+        {
+            delete[] text[rowIndex];
+        }
     }
-
+    delete[] pasteBuffer;
     delete[] text;
     text = nullptr;
 }
@@ -81,16 +86,19 @@ int Buffer::InitializeBuffer()
     }
     try
     {
-        text[0] = new char[defaultRowLength];
+        text[0] = new char[defaultRowLength]; 
+        pasteBuffer = new char[defaultRowLength];
     }
     catch (const std::bad_alloc&)
     {
         printf("Allocation failed");
         return -1;
     }
+    
     totalRowCounter = 0;  
 
     text[0][0] = '\0';
+    pasteBuffer[0] = '\0';
     SetCursorPosition(0, 0);
 
     return 0;
@@ -509,15 +517,15 @@ int Buffer::InsertAtCursorPos(char* strToInsert)
     return 0;
 }*/ 
 
-int Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete)
+int Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bool ifSaveToBuffer)
 {
     int   row       = curCursor->GetRow();
     int   column    = curCursor->GetColumn();
     char* addBuffer = nullptr;
 
-    if (column + amountOfCharsToDelete >= defaultRowLength)  // got to check edge case
+    if (column + amountOfCharsToDelete >= defaultRowLength)  
     {
-        printf("\nDeletion amount exceeds row bounds");
+        printf("\nError: deletion amount exceeds row bounds");
         return -1;
     }
     try
@@ -537,16 +545,71 @@ int Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete)
             char curChar = text[row][columnIndex];
             strncat_s(addBuffer, defaultRowLength, &curChar, 1);
         }
+        if (ifSaveToBuffer)  // if it is cut mode
+        {
+            pasteBuffer[0] = '\0';
+            for (unsigned int columnIndex = column; columnIndex < column + amountOfCharsToDelete; columnIndex++)
+            {
+                char curChar = text[row][columnIndex];
+                strncat_s(pasteBuffer, defaultRowLength, &curChar, 1);
+            }
+        }
         text[row][column] = '\0';
         strcat_s(text[row], defaultRowLength, addBuffer);
     }
     else  // just put a termination '\0' 
     {
+        if (ifSaveToBuffer)
+        {
+            pasteBuffer[0] = '\0';
+            for (unsigned int columnIndex = column; columnIndex < strlen(text[row]); columnIndex++)
+            {
+                char curChar = text[row][columnIndex];
+                strncat_s(pasteBuffer, defaultRowLength, &curChar, 1);
+            }
+        }
         text[row][column] = '\0';
     }
-    
+
+    SetCursorPosition(row, column);
 
     return 0;
+}
+
+int Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
+{
+    int row    = curCursor->GetRow();
+    int column = curCursor->GetColumn();
+
+    if (column + amountOfCharsToCopy >= defaultRowLength)
+    {
+        printf("\nError: copying amount exceeds row bounds");
+        return -1;
+    }
+    pasteBuffer[0] = '\0';
+    if (column + amountOfCharsToCopy < strlen(text[row]))  
+    {
+        for (unsigned int columnIndex = column; columnIndex < column + amountOfCharsToCopy; columnIndex++)
+        {
+            char curChar = text[row][columnIndex];
+            strncat_s(pasteBuffer, defaultRowLength, &curChar, 1);  // check edge case
+        }
+    }
+    else
+    {
+        for (unsigned int columnIndex = column; columnIndex < strlen(text[row]); columnIndex++)
+        {
+            char curChar = text[row][columnIndex];
+            strncat_s(pasteBuffer, defaultRowLength, &curChar, 1);  // check edge case
+        }
+    }
+    
+    return 0;
+}
+
+int Buffer::PasteAtCursorPos()
+{
+    return this->InsertAtCursorPos(pasteBuffer);   
 }
 
 int Buffer::MoveCursorToEnd() 
