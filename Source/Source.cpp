@@ -5,7 +5,7 @@
 
  
 
-FILE*  filePtr = nullptr;
+FILE*  filePtr = nullptr; 
 const  int ROWSIZE = 150;
 const  int BUFFERSIZE = 256;
 const  int COMMANDSIZE = 10;
@@ -16,7 +16,7 @@ HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 void HandleUserExit(char*, Buffer*);
 int  HandleAppend(char*, Buffer*);
 
-int  HandleSaveToFile(char*, Buffer*);
+int  HandleSaveToFile(char*, Buffer*); 
 int  HandleLoadFromFile(char*, Buffer*);
 void HandlePrintCurrent(Buffer*);
 int  HandleInsert(Buffer*);
@@ -39,7 +39,7 @@ int main()
 		return EXIT_FAILURE;
 	}
 	SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
-	system("cls");
+	system("cls");   
 	
 	Buffer* buffer = new Buffer();
 	bool ifContinue = true;
@@ -553,6 +553,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 			command = SETCURSOR;
 			break;
 		default:
+			system("cls");
 			printf(">>The command is not implemmented\n");
 			command = UNDEFINED;
 			break;
@@ -584,6 +585,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 			command = CLS;
 			break;
 		default:
+			system("cls");
 			command = UNDEFINED;
 			printf(">>The command is not implemmented\n");
 			break;
@@ -591,11 +593,15 @@ enum Mode GetUserCommand(Buffer* buffer)
 	}
 	else 
 	{
+		system("cls");
 		printf(">>The command is not implemmented\n");
 		command = UNDEFINED;
-		return command;
 	}
 
+	if (command == UNDEFINED)
+	{
+		while ((getchar()) != '\n');
+	}
 	
 	delete[] input;
 	return command;
