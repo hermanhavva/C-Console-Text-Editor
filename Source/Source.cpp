@@ -3,7 +3,7 @@
 #include <windows.h>
 #include "Buffer Class.cpp"
 
-
+ 
 
 FILE*  filePtr = nullptr;
 const  int ROWSIZE = 150;
@@ -20,7 +20,8 @@ int  HandleSaveToFile(char*, Buffer*);
 int  HandleLoadFromFile(char*, Buffer*);
 void HandlePrintCurrent(Buffer*);
 int  HandleInsert(Buffer*);
-int  HandleSetCursor(Buffer*);
+int  HandleSetCursor(Buffer*); 
+int  HandleDelete(char*, Buffer*);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
@@ -198,19 +199,9 @@ int HandleLoadFromFile(char* input, Buffer* buffer)
 
 
 
-int HandleInsert(Buffer* buffer)
+int HandleInsert(char* input, Buffer* buffer)
 {
 	const int inputSize = buffer->GetRowSize();
-
-	char* input = nullptr; 
-	try
-	{
-		input = new char[inputSize];
-	} 
-	catch (const std::bad_alloc&)
-	{
-		AllocFailureProgTermination(buffer, nullptr);
-	}
 	
 	Cursor curCursor = buffer->GetCurCursor();  // returns a copy
 
@@ -221,30 +212,17 @@ int HandleInsert(Buffer* buffer)
 	if (buffer->InsertAtCursorPos(input) == -1)
 	{
 		printf("<<failure\n");
+		return -1;
 	}
-	else
-	{
-		printf("<<success\n");
-	}
-
-	delete[] input;
-
+	
+	printf("<<success\n");
 	return 0;
 }
 
-int HandleInsertReplace(Buffer* buffer)
+int HandleInsertReplace(char* input, Buffer* buffer)
 {
 	Cursor curCursor = buffer->GetCurCursor();
-	char* input = nullptr;
 	int inputSize = buffer->GetRowSize();
-	try
-	{
-		input = new char[inputSize];
-	}
-	catch (const std::bad_alloc&)
-	{
-		AllocFailureProgTermination(buffer, nullptr);
-	}
 
 	printf("Enter the message to insert at position %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, inputSize, stdin);
@@ -257,7 +235,6 @@ int HandleInsertReplace(Buffer* buffer)
 		return -1;
 	}
 	printf(">>success\n");
-	delete[] input;
 
 	return 0;  
 }
@@ -295,6 +272,73 @@ int HandleSearch(char* input, Buffer* buffer)
 	
 	return 0;
 }
+
+int HandleDelete (char* input, Buffer* buffer)
+{
+	Cursor curCursor = buffer->GetCurCursor();
+	unsigned int amountOfCharsToDelete = 0;
+
+	printf("Enter amount of symbols to delete at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	scanf_s(" %u", &amountOfCharsToDelete);
+	fgets(input, buffer->GetRowSize(), stdin);  // to remove '\n' from stdin
+	if (buffer->DeleteAtCursorPos(amountOfCharsToDelete, false) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
+
+	return 0;
+}
+
+int HandleCut(char* input, Buffer* buffer)
+{
+	unsigned int amountOfCharsToCut = 0;
+	Cursor curCursor = buffer->GetCurCursor();
+	
+	printf("Enter amount of symbols to cut from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	scanf_s("%u", &amountOfCharsToCut);
+	fgets(input, buffer->GetRowSize(), stdin);  // to get '\n' out of stdin
+	
+	if (buffer->DeleteAtCursorPos(amountOfCharsToCut, true) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
+	return 0;
+}
+
+int HandleCopy(char* input, Buffer* buffer)
+{
+	unsigned int amountOfCharsToCopy = 0;
+	Cursor curCursor = buffer->GetCurCursor();
+
+	printf("Enter amount of symbols to copy from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	scanf_s("%u", &amountOfCharsToCopy);
+	fgets(input, buffer->GetRowSize(), stdin);  // to get '\n' out of stdin
+
+	if (buffer->CopyAtCursorPos(amountOfCharsToCopy) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
+	return 0;
+}
+
+int HandlePaste(Buffer* buffer)
+{
+	if (buffer->PasteAtCursorPos() == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
+	return 0;
+}
+
+
 enum Mode
 {
 	USEREXIT = 0,
@@ -352,7 +396,7 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 
 	try
 	{
-		input = new char[ROWSIZE];
+		input = new char[buffer->GetRowSize()];
 	}
 	catch (const std::bad_alloc&)
 	{
@@ -388,19 +432,31 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 		break;
 
 	case INSERT:
-		HandleInsert(buffer); 
+		HandleInsert(input, buffer); 
 		break;
-
+		 
 	case INSERTREPLACE:
-		HandleInsertReplace(buffer);
+		HandleInsertReplace(input, buffer);
 		break; 
-
+		 
 	case SETCURSOR:
 		HandleSetCursor(buffer);
 		break;
 
 	case SEARCH:
 		HandleSearch(input, buffer);
+		break;
+	case DELETESTR:
+		HandleDelete(input, buffer);
+		break;
+	case CUT:
+		HandleCut(input, buffer);
+		break;
+	case COPY:
+		HandleCopy(input, buffer);
+		break;
+	case PASTE:
+		HandlePaste(buffer);
 		break;
 
 	case CLS:
