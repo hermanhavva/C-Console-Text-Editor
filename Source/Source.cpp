@@ -21,7 +21,7 @@ int  HandleLoadFromFile(char*, Buffer*);
 void HandlePrintCurrent(Buffer*);
 int  HandleInsert(Buffer*);
 int  HandleSetCursor(Buffer*); 
-int  HandleDelete(char*, Buffer*);
+int  HandleDelete(Buffer*);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
@@ -176,7 +176,7 @@ int HandleLoadFromFile(char* input, Buffer* buffer)
 		return -1;
 
 	printf("\nEnter the filename: ");
-	fgets(input, ROWSIZE, stdin);   // remove '\n'
+	fgets(input, ROWSIZE, stdin);   
 	RemoveEndNewLine(input);
 
 	err = fopen_s(&filePtr, input, "r");
@@ -253,7 +253,6 @@ int HandleSetCursor(Buffer* buffer)
 {
 	int row = 0; 
 	int column = 0;
-	char* input = new char[10];
 
 	printf("\nEnter the Row: ");
 
@@ -261,9 +260,9 @@ int HandleSetCursor(Buffer* buffer)
 	printf("Enter the Column: ");
 	scanf_s(" %d", &column);
 	
-	fgets(input, 10, stdin);  // '\n' to get out of the in buffer
+	while ((getchar()) != '\n');  // '\n' to get out of the in buffer
 	system("cls");
-	delete[] input; 
+	
 
 	if (buffer->SetCursorPosition(row, column) == -1)
 	{
@@ -287,14 +286,14 @@ int HandleSearch(char* input, Buffer* buffer)
 	return 0;
 }
 
-int HandleDelete (char* input, Buffer* buffer)
+int HandleDelete (Buffer* buffer)
 {
 	Cursor curCursor = buffer->GetCurCursor();
 	unsigned int amountOfCharsToDelete = 0;
 
 	printf("Enter amount of symbols to delete at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s(" %u", &amountOfCharsToDelete);
-	fgets(input, buffer->GetRowSize(), stdin);  // to remove '\n' from stdin
+	while ((getchar()) != '\n');  // to remove '\n' from stdin
 	system("cls");
 
 	if (buffer->DeleteAtCursorPos(amountOfCharsToDelete, false) == -1)
@@ -308,14 +307,14 @@ int HandleDelete (char* input, Buffer* buffer)
 	return 0;
 }
 
-int HandleCut(char* input, Buffer* buffer)
+int HandleCut(Buffer* buffer)
 {
 	unsigned int amountOfCharsToCut = 0;
 	Cursor curCursor = buffer->GetCurCursor();
 	
 	printf("Enter amount of symbols to cut from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s("%u", &amountOfCharsToCut);
-	fgets(input, buffer->GetRowSize(), stdin);  // to get '\n' out of stdin
+	while ((getchar()) != '\n');  // to get '\n' out of stdin
 	system("cls");
 
 	if (buffer->DeleteAtCursorPos(amountOfCharsToCut, true) == -1)
@@ -327,14 +326,14 @@ int HandleCut(char* input, Buffer* buffer)
 	return 0;
 }
 
-int HandleCopy(char* input, Buffer* buffer)
+int HandleCopy(Buffer* buffer)
 {
 	unsigned int amountOfCharsToCopy = 0;
 	Cursor curCursor = buffer->GetCurCursor();
 
 	printf("Enter amount of symbols to copy from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s("%u", &amountOfCharsToCopy);
-	fgets(input, buffer->GetRowSize(), stdin);  // to get '\n' out of stdin
+	while ((getchar()) != '\n');  // to get '\n' out of stdin
 	system("cls");
 
 	if (buffer->CopyAtCursorPos(amountOfCharsToCopy) == -1)
@@ -467,13 +466,13 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 		HandleSearch(input, buffer);
 		break;
 	case DELETESTR:
-		HandleDelete(input, buffer);
+		HandleDelete(buffer);
 		break;
 	case CUT:
-		HandleCut(input, buffer);
+		HandleCut(buffer);
 		break;
 	case COPY:
-		HandleCopy(input, buffer);
+		HandleCopy(buffer);
 		break;
 	case PASTE:
 		HandlePaste(buffer);
