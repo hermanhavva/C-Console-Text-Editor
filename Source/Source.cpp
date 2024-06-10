@@ -110,6 +110,7 @@ int HandleAppend(char* input, Buffer* buffer)
 {
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);  // removing '\n'
+	system("cls");
 
 	if (buffer->Append(input) == 0) 
 	{
@@ -125,6 +126,7 @@ int HandleAppend(char* input, Buffer* buffer)
 
 int HandleNewLine(Buffer* buffer)
 {
+	system("cls");
 	if (buffer->AddRow() == 0)
 	{
 		printf(">>success\n");
@@ -142,6 +144,8 @@ int HandleSaveToFile(char* input, Buffer* buffer)
 	RemoveEndNewLine(input);  // removing '\n'
 
 	err = fopen_s(&filePtr, input, "a+");
+	system("cls");
+
 	if (err != 0 || filePtr == nullptr)  // returns 0 if successful
 	{
 		printf("\nCould not open the file >>failure");
@@ -154,7 +158,7 @@ int HandleSaveToFile(char* input, Buffer* buffer)
 		filePtr = nullptr;
 		return -1;
 	}
-	
+
 	CloseFile(filePtr);
 	filePtr = nullptr;
 	printf(">>success\n");
@@ -178,9 +182,12 @@ int HandleLoadFromFile(char* input, Buffer* buffer)
 	err = fopen_s(&filePtr, input, "r");
 	if (err != 0 || filePtr == NULL)  // returns 0 if successful
 	{
+		system("cls");
 		printf("\nCould not open the file\n");
 		return -1;
 	}
+	system("cls");
+
 	switch (buffer->LoadFromFile(filePtr))
 	{
 	case 0:
@@ -208,13 +215,14 @@ int HandleInsert(char* input, Buffer* buffer)
 	printf("String to insert at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);  // for omitting '\n'
+	system("cls");
 
 	if (buffer->InsertAtCursorPos(input) == -1)
 	{
 		printf("<<failure\n");
 		return -1;
 	}
-	
+
 	printf("<<success\n");
 	return 0;
 }
@@ -227,6 +235,7 @@ int HandleInsertReplace(char* input, Buffer* buffer)
 	printf("Enter the message to insert at position %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, inputSize, stdin);
 	RemoveEndNewLine(input);
+	system("cls");
 
 	if (buffer->InsertReplaceAtCursorPos(input) == -1)
 	{
@@ -234,6 +243,7 @@ int HandleInsertReplace(char* input, Buffer* buffer)
 		printf(">>failure\n");
 		return -1;
 	}
+
 	printf(">>success\n");
 
 	return 0;  
@@ -252,12 +262,15 @@ int HandleSetCursor(Buffer* buffer)
 	scanf_s(" %d", &column);
 	
 	fgets(input, 10, stdin);  // '\n' to get out of the in buffer
+	system("cls");
 	delete[] input; 
+
 	if (buffer->SetCursorPosition(row, column) == -1)
 	{
 		printf(">>failure\n");
 		return -1;
 	}
+	
 	printf(">>success\n");
 	return 0;
 	
@@ -268,6 +281,7 @@ int HandleSearch(char* input, Buffer* buffer)
 	printf("Enter the substring to look for: ");
 	fgets(input, ROWSIZE, stdin);
 	RemoveEndNewLine(input);
+	system("cls");
 	buffer->SearchSubstrPos(input);
 	
 	return 0;
@@ -281,11 +295,14 @@ int HandleDelete (char* input, Buffer* buffer)
 	printf("Enter amount of symbols to delete at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s(" %u", &amountOfCharsToDelete);
 	fgets(input, buffer->GetRowSize(), stdin);  // to remove '\n' from stdin
+	system("cls");
+
 	if (buffer->DeleteAtCursorPos(amountOfCharsToDelete, false) == -1)
-	{
+	{	
 		printf(">>failure\n");
 		return -1;
 	}
+
 	printf(">>success\n");
 
 	return 0;
@@ -299,7 +316,8 @@ int HandleCut(char* input, Buffer* buffer)
 	printf("Enter amount of symbols to cut from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s("%u", &amountOfCharsToCut);
 	fgets(input, buffer->GetRowSize(), stdin);  // to get '\n' out of stdin
-	
+	system("cls");
+
 	if (buffer->DeleteAtCursorPos(amountOfCharsToCut, true) == -1)
 	{
 		printf(">>failure\n");
@@ -317,6 +335,7 @@ int HandleCopy(char* input, Buffer* buffer)
 	printf("Enter amount of symbols to copy from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s("%u", &amountOfCharsToCopy);
 	fgets(input, buffer->GetRowSize(), stdin);  // to get '\n' out of stdin
+	system("cls");
 
 	if (buffer->CopyAtCursorPos(amountOfCharsToCopy) == -1)
 	{
@@ -329,6 +348,7 @@ int HandleCopy(char* input, Buffer* buffer)
 
 int HandlePaste(Buffer* buffer)
 {
+	system("cls");
 	if (buffer->PasteAtCursorPos() == -1)
 	{
 		printf(">>failure\n");

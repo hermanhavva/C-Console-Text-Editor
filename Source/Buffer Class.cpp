@@ -608,7 +608,7 @@ int Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
 }
 
 int Buffer::PasteAtCursorPos()
-{
+{ 
     return this->InsertAtCursorPos(pasteBuffer);   
 }
 
