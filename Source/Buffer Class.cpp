@@ -318,8 +318,43 @@ void Buffer::PrintCurrent()
 {
     printf("Current text: \n________________________________\n");
 
+    HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
     for (int row = 0; row <= totalRowCounter; row++)
+    {
+        if (row == curCursor->GetRow())
+        {
+            for (int column = 0; column <= strlen(text[row]); column++)
+            {
+                if (column == curCursor->GetColumn())
+                {
+                    SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN);
+                    switch (text[row][column])
+                    {
+                    case '\0':  // '\0' is not colored
+                        printf(" \n");
+                        break;
+                    default:
+                        printf("%c", text[row][column]);
+                        break;
+                    }
+                    SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
+                    continue;
+                }
+                switch (text[row][column])
+                {
+                case '\0':
+                    printf("\n");
+                    break;
+                default:
+                    printf("%c", text[row][column]);
+                    break;
+                }
+            }
+            continue;
+        }
         printf("%s\n", text[row]);
+    }
+        
 
     printf("\n");
 }
@@ -608,7 +643,7 @@ int Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
 }
 
 int Buffer::PasteAtCursorPos()
-{
+{ 
     return this->InsertAtCursorPos(pasteBuffer);   
 }
 
