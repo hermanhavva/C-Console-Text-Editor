@@ -198,12 +198,8 @@ int Buffer::AddRow()
         }
         text[curRow][curColumn] = '\0';
         strcat_s(text[curRow + 1], defaultRowLength, buffer);
-
     }
-    else if (curColumn == strlen(text[curRow]))  // no need to move text, only move cursor
-    {    
-        SetCursorPosition(curRow + 1, 0);
-    }
+    SetCursorPosition(curRow + 1, 0);
 
     delete[] buffer;
     return 0;
@@ -410,7 +406,7 @@ int Buffer::InsertReplaceAtCursorPos(char* input)
     {
         text[row][column + insertTextLength] = '\0';
     }
-    SetCursorPosition(row, strlen(text[row]));
+    SetCursorPosition(row, column+insertTextLength);
 
     return 0;
 }

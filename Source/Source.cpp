@@ -3,7 +3,7 @@
 #include <windows.h>
 #include "Buffer Class.cpp"
 
-
+ 
 
 FILE*  filePtr = nullptr;
 const  int ROWSIZE = 150;
@@ -20,7 +20,7 @@ int  HandleSaveToFile(char*, Buffer*);
 int  HandleLoadFromFile(char*, Buffer*);
 void HandlePrintCurrent(Buffer*);
 int  HandleInsert(Buffer*);
-int  HandleSetCursor(Buffer*);
+int  HandleSetCursor(Buffer*); 
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
