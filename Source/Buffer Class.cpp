@@ -22,6 +22,7 @@ public:
     int  InsertAtCursorPos(char*);
     int  InsertReplaceAtCursorPos(char*);
     void SearchSubstrPos(char*);
+    int  DeleteAtCursorPos(unsigned int);
     int  SetCursorPosition(int, int);
     int  MoveCursorToEnd();
     int  GetCurRowRemainLength(); 
@@ -415,9 +416,9 @@ void Buffer::SearchSubstrPos(char* subString)
 {
     printf("It can be found on positions(row|column): ");
 
-    for (unsigned int row = 0; row <= totalRowCounter; row++)
+    for (int row = 0; row <= totalRowCounter; row++)
     {
-        for (unsigned int column = 0; column < strlen(text[row]); column++)
+        for (int column = 0; column < (int)strlen(text[row]); column++)
         {
             bool ifPresent = true;
             if (text[row][column] == subString[0])  // if first elements are the same
@@ -507,6 +508,46 @@ int Buffer::InsertAtCursorPos(char* strToInsert)
     free(input);
     return 0;
 }*/ 
+
+int Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete)
+{
+    int   row       = curCursor->GetRow();
+    int   column    = curCursor->GetColumn();
+    char* addBuffer = nullptr;
+
+    if (column + amountOfCharsToDelete >= defaultRowLength)  // got to check edge case
+    {
+        printf("\nDeletion amount exceeds row bounds");
+        return -1;
+    }
+    try
+    {
+        addBuffer = new char[defaultRowLength];
+    }
+    catch (const std::bad_alloc&)
+    {
+        AllocFailureProgTermination(this, nullptr);
+    }
+    addBuffer[0] = '\0';
+
+    if (column + amountOfCharsToDelete < strlen(text[row]))  // cut out the deleted symbols
+    {
+        for (unsigned int columnIndex = column + amountOfCharsToDelete; columnIndex < strlen(text[row]); columnIndex++)
+        {
+            char curChar = text[row][columnIndex];
+            strncat_s(addBuffer, defaultRowLength, &curChar, 1);
+        }
+        text[row][column] = '\0';
+        strcat_s(text[row], defaultRowLength, addBuffer);
+    }
+    else  // just put a termination '\0' 
+    {
+        text[row][column] = '\0';
+    }
+    
+
+    return 0;
+}
 
 int Buffer::MoveCursorToEnd() 
 {
