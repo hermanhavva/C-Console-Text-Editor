@@ -374,7 +374,7 @@ int Buffer::InsertAtCursorPos(char* input)
     int insertTextLength = strlen(input);
     int curRowMaxSize = defaultRowLength;  
 
-    if ((insertTextLength + rowTextLength ) - curRowMaxSize >= 0)
+    if ((insertTextLength + rowTextLength ) >= defaultRowLength)
     {   
         printf(">>Not enough space (might use newline first)\n");
         return -1;
@@ -416,7 +416,7 @@ int Buffer::InsertAtCursorPos(char* input)
     }
     else  // only strcat
     {
-        strcat_s(text[row], curRowMaxSize - 1, input);
+        strcat_s(text[row], curRowMaxSize, input);
     }
     SetCursorPosition(row, column + insertTextLength);
     return 0;
