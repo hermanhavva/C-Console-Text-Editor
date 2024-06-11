@@ -13,8 +13,5 @@ Simple console application on C++ which enables writing, editing, loading, readi
 9. Set Cursor Position - sets cursor at specified row column 
 10. Delete specified number of symbols from current cursor position
 11. Cut/Copy/Paste (if buffer is empty it pastes an empty str)
-# 💡 Example of interface
-
-![schema](C-Console-Text-Editor1/Source/Tests/main menu.png)
 
 This project is a part of a course on Programming Paradigms at Kyiv School of Economics
