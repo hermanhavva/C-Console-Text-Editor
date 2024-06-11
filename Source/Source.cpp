@@ -3,21 +3,12 @@
 #include <windows.h>
 #include "Buffer Class.cpp"
 
- 
 
 FILE*  filePtr = nullptr; 
-const  int ROWSIZE = 150;
-const  int BUFFERSIZE = 256;
-const  int COMMANDSIZE = 10;
-char** buffer = NULL;
-int	   bufferRowCounter = -1;  // default value is -1 empty buffer (no rows)
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 void HandleUserExit(char*, Buffer*);
-int  HandleAppend(char*, Buffer*);
 
-int  HandleSaveToFile(char*, Buffer*); 
-int  HandleLoadFromFile(char*, Buffer*);
 void HandlePrintCurrent(Buffer*);
 int  HandleInsert(Buffer*);
 int  HandleSetCursor(Buffer*); 
@@ -25,11 +16,12 @@ int  HandleDelete(Buffer*);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
-//void AllocFailureProgTermination(Buffer*);
-int  RemoveEndNewLine(char*);
 void ExecuteCommand(enum Mode, Buffer*, bool*);
 void PrintMainMenu(Buffer*);
 enum Mode GetUserCommand(Buffer* buffer);
+
+int  RemoveEndNewLine(char*);
+bool IsInputSizeValid(char* input, int inputSize);
 
 int main()
 {
@@ -106,9 +98,15 @@ void HandleUserExit(char* input, Buffer* buffer)
 	exit(0);
 }
 
-int HandleAppend(char* input, Buffer* buffer)
+int HandleAppend(char* input, int inputSize, Buffer* buffer)
 {
-	fgets(input, ROWSIZE, stdin);
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
 	RemoveEndNewLine(input);  // removing '\n'
 	system("cls");
 
@@ -136,11 +134,18 @@ int HandleNewLine(Buffer* buffer)
 	return -1;
 }
 
-int HandleSaveToFile(char* input, Buffer* buffer)
+int HandleSaveToFile(char* input, int inputSize, Buffer* buffer)
 {
 	errno_t err;  // to track the execution of fopen_s()
 	printf("\nEnter the filename: ");
-	fgets(input, ROWSIZE, stdin);
+	fgets(input, inputSize, stdin);
+
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+			return -1;
+	}
+
 	RemoveEndNewLine(input);  // removing '\n'
 
 	err = fopen_s(&filePtr, input, "a+");
@@ -166,17 +171,28 @@ int HandleSaveToFile(char* input, Buffer* buffer)
 
 }
 
-int HandleLoadFromFile(char* input, Buffer* buffer)
+int HandleLoadFromFile(char* input, int inputSize, Buffer* buffer)
 {
 	errno_t err;  // to track the execution of fopen_s() 
 	printf("\nCurrent text will be deleted, 1 - continue, 0 - cancel:\n");
 
-	fgets(input, ROWSIZE, stdin);
-	if (input[0] == '0')
+	fgets(input, inputSize, stdin);
+
+	if (input[0] == '0' || IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
 		return -1;
+	}
 
 	printf("\nEnter the filename: ");
-	fgets(input, ROWSIZE, stdin);   
+	
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
 	RemoveEndNewLine(input);
 
 	err = fopen_s(&filePtr, input, "r");
@@ -206,14 +222,18 @@ int HandleLoadFromFile(char* input, Buffer* buffer)
 
 
 
-int HandleInsert(char* input, Buffer* buffer)
-{
-	const int inputSize = buffer->GetRowSize();
-	
+int HandleInsert(char* input, int inputSize, Buffer* buffer)
+{	
 	Cursor curCursor = buffer->GetCurCursor();  // returns a copy
 
 	printf("String to insert at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
-	fgets(input, ROWSIZE, stdin);
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
 	RemoveEndNewLine(input);  // for omitting '\n'
 	system("cls");
 
@@ -227,19 +247,24 @@ int HandleInsert(char* input, Buffer* buffer)
 	return 0;
 }
 
-int HandleInsertReplace(char* input, Buffer* buffer)
+int HandleInsertReplace(char* input, int inputSize, Buffer* buffer)
 {
 	Cursor curCursor = buffer->GetCurCursor();
-	int inputSize = buffer->GetRowSize();
 
 	printf("Enter the message to insert at position %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+			return -1;
+	}
+	
+
 	RemoveEndNewLine(input);
 	system("cls");
 
 	if (buffer->InsertReplaceAtCursorPos(input) == -1)
 	{
-		delete[] input;
 		printf(">>failure\n");
 		return -1;
 	}
@@ -275,10 +300,16 @@ int HandleSetCursor(Buffer* buffer)
 	
 }
 
-int HandleSearch(char* input, Buffer* buffer) 
+int HandleSearch(char* input, int inputSize, Buffer* buffer) 
 {
 	printf("Enter the substring to look for: ");
-	fgets(input, ROWSIZE, stdin);
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize)) 
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+		
 	RemoveEndNewLine(input);
 	system("cls");
 	buffer->SearchSubstrPos(input);
@@ -394,6 +425,17 @@ BOOL WINAPI ConsoleHandler(DWORD signal) {
 	return TRUE;
 }
 
+bool IsInputSizeValid(char* input, int inputSize)
+{
+	if (inputSize > 0 && inputSize == strlen(input) + 1)
+	{
+		if (input[strlen(input) - 1] != '\n')
+			while ((getchar()) != '\n');
+
+		return false;
+	}
+	return true;
+}
 
 int RemoveEndNewLine(char* string)
 {
@@ -412,10 +454,11 @@ int RemoveEndNewLine(char* string)
 void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 {
 	char* input = nullptr;
+	int inputSize = buffer->GetRowSize() + 1;
 
 	try
 	{
-		input = new char[buffer->GetRowSize()];
+		input = new char[inputSize];
 	}
 	catch (const std::bad_alloc&)
 	{
@@ -431,7 +474,7 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 		break;
 
 	case APPEND:
-		HandleAppend(input, buffer);
+		HandleAppend(input, inputSize, buffer);
 		break;
 
 	case NEWLINE:
@@ -439,11 +482,11 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 		break;
 
 	case SAVETOFILE:  
-		HandleSaveToFile(input, buffer);
+		HandleSaveToFile(input, inputSize, buffer);
 		break;
 
 	case LOADFROMFILE:
-		HandleLoadFromFile(input, buffer);  // problem reading the file
+		HandleLoadFromFile(input, inputSize, buffer);  // problem reading the file
 		break;
 
 	case PRINTCURRENT:
@@ -451,11 +494,11 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 		break;
 
 	case INSERT:
-		HandleInsert(input, buffer); 
+		HandleInsert(input, inputSize, buffer); 
 		break;
 		 
 	case INSERTREPLACE:
-		HandleInsertReplace(input, buffer);
+		HandleInsertReplace(input,inputSize, buffer);
 		break; 
 		 
 	case SETCURSOR:
@@ -463,7 +506,7 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 		break;
 
 	case SEARCH:
-		HandleSearch(input, buffer);
+		HandleSearch(input, inputSize, buffer);
 		break;
 	case DELETESTR:
 		HandleDelete(buffer);
@@ -505,6 +548,8 @@ enum Mode GetUserCommand(Buffer* buffer)
 	printf("Enter number: ");
 	enum Mode command;
 	char* input = nullptr;
+	const int COMMANDSIZE = 10;
+
 	try
 	{
 		input = new char[COMMANDSIZE];
@@ -552,7 +597,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 			command = SETCURSOR;
 			break;
 		default:
-			system("cls");
+			//system("cls");
 			printf(">>The command is not implemmented\n");
 			command = UNDEFINED;
 			break;
@@ -584,7 +629,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 			command = CLS;
 			break;
 		default:
-			system("cls");
+			//system("cls");
 			command = UNDEFINED;
 			printf(">>The command is not implemmented\n");
 			break;
@@ -592,7 +637,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 	}
 	else 
 	{
-		system("cls");
+		//system("cls");
 		printf(">>The command is not implemmented\n");
 		command = UNDEFINED;
 	}
