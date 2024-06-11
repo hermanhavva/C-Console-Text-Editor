@@ -15,4 +15,6 @@ Simple console application on C++ which enables writing, editing, loading, readi
 11. Cut/Copy/Paste (if buffer is empty it pastes an empty str)
 # 💡 Example of interface
 
+![schema](C-Console-Text-Editor1/Source/Tests/main menu.png)
+
 This project is a part of a course on Programming Paradigms at Kyiv School of Economics
