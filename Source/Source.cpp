@@ -387,7 +387,7 @@ int HandlePaste(Buffer* buffer)
 	printf(">>success\n");
 	return 0;
 }
-
+ 
 
 enum Mode
 {
@@ -418,7 +418,7 @@ BOOL WINAPI ConsoleHandler(DWORD signal) {
 		printf("\nProgram interrupted. Cleaning up...\n");
 		Sleep(1000);
 
-		if (filePtr != NULL)
+		if (filePtr != NULL && filePtr != nullptr)
 			fclose(filePtr);
 		exit(0);
 	}

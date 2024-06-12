@@ -34,7 +34,7 @@ public:
 
 private:
     const int defaultRowNum = 256;  // will scale this baby up (no)
-    const int defaultRowLength = 50;
+    const int defaultRowLength = 100;
    
     int     totalRowCounter = -1;  
     Cursor* curCursor = nullptr;
