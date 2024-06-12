@@ -12,7 +12,7 @@ HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
-void ExecuteCommand(enum Mode, Buffer*, bool*);
+void ExecuteCommand(enum Mode, Buffer*, bool*); 
 void PrintMainMenu(Buffer*);
 enum Mode GetUserCommand(Buffer* buffer);
 
