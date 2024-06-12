@@ -597,7 +597,6 @@ enum Mode GetUserCommand(Buffer* buffer)
 			command = SETCURSOR;
 			break;
 		default:
-			//system("cls");
 			printf(">>The command is not implemmented\n");
 			command = UNDEFINED;
 			break;
@@ -629,7 +628,6 @@ enum Mode GetUserCommand(Buffer* buffer)
 			command = CLS;
 			break;
 		default:
-			//system("cls");
 			command = UNDEFINED;
 			printf(">>The command is not implemmented\n");
 			break;
@@ -637,7 +635,6 @@ enum Mode GetUserCommand(Buffer* buffer)
 	}
 	else 
 	{
-		//system("cls");
 		printf(">>The command is not implemmented\n");
 		command = UNDEFINED;
 	}
