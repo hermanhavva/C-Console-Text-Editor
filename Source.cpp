@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include <windows.h>
 
-//#include "Cursor class.h"
 #include "Buffer class.h"
 #include <new>
 #include "Auxiliary functions.h"
 #include "Cursor class.h"
-
+ 
 FILE*  filePtr = nullptr;
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -185,8 +184,6 @@ int HandleLoadFromFile(char* input, int inputSize, Buffer* buffer)
 	}
 }
 
-
-
 int HandleInsert(char* input, int inputSize, Buffer* buffer)
 {
 	Cursor curCursor = buffer->GetCurCursor();  // returns a copy
@@ -352,7 +349,6 @@ int HandlePaste(Buffer* buffer)
 	printf(">>success\n");
 	return 0;
 }
-
 
 enum Mode
 {
