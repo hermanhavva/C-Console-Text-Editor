@@ -728,7 +728,7 @@ void CloseFile(FILE* filePtr)
     filePtr = nullptr;
 }
 
-void AllocFailureProgTermination(Buffer* buffer, FILE* filePtr)  //     BETTER KEEP THIS AND CloseFile() OUT OF THE CLASS
+void AllocFailureProgTermination(Buffer* buffer, FILE* filePtr)  
 {
     perror("Error allocating memory");
     CloseFile(filePtr);
