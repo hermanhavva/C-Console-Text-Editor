@@ -14,6 +14,11 @@ Simple console application on C++ which enables writing, editing, loading, readi
 10. **Delete specified number of symbols** from current cursor position
 11. **Cut/Copy/Paste** (if buffer is empty it pastes an empty str)
     
+# 📁 Repo structure and source files
+1. `Buffer class.h` features the functionality of buffer which powers the program, it is dependent on `Cursor class.h` and `Auxiliary functions.h`.
+2. `Cursor class.h` simple class for managing a `Cursor` object which has `Row` and `Column` fields.
+3. `Auxiliary functions.h` is a header file with functions which are not clasified to direct functionality, but still important.
+4. `Source.cpp` is a main file, it gets the command from user, and passes on the execution to headers files
 
 # 👨‍💻 Interface example
 ### Main Menu:
@@ -22,10 +27,5 @@ Simple console application on C++ which enables writing, editing, loading, readi
 ### Current Cursor marker:
 <img width="637" alt="cursor demonstrating" src="https://github.com/hermanhavva/C-Console-Text-Editor/assets/108483440/affb9bad-400b-4200-976b-6305f5df1fb8">
 
-# 📁 Repo structure and source files
-1. `Buffer class.h` features the functionality of buffer which powers the program, it is dependent on `Cursor class.h` and `Auxiliary functions.h`.
-2. `Cursor class.h` simple class for managing a `Cursor` object which has `Row` and `Column` fields.
-3. `Auxiliary functions.h` is a header file with functions which are not clasified to direct functionality, but still important.
-4. `Source.cpp` is a main file, it gets the command from user, and passes on the execution to headers files
-  
+
   *This project is a part of a course on Programming Paradigms at Kyiv School of Economics*
