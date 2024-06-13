@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <new>
 
 #include "Buffer class.h"
-#include <new>
 #include "Auxiliary functions.h"
 #include "Cursor class.h"
  
@@ -13,7 +13,7 @@ HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
 void ExecuteCommand(enum Mode, Buffer*, bool*); 
-void PrintMainMenu(Buffer*);
+void PrintMainMenu(Buffer*); 
 enum Mode GetUserCommand(Buffer* buffer);
 
 int main()
