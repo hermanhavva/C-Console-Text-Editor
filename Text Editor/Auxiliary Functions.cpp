@@ -2,23 +2,6 @@
 #include "windows.h"
 #include "Auxiliary functions.h"
 
-void AllocFailureProgTermination(Buffer* buffer, FILE* filePtr)
-{
-    perror("Error allocating memory");
-    CloseFile(filePtr);
-    delete buffer;
-
-    Sleep(1000);
-    exit(EXIT_FAILURE);
-}
-
-void CloseFile(FILE* filePtr)
-{
-    if (filePtr != nullptr)
-        fclose(filePtr);
-
-    filePtr = nullptr;
-}
 
 int RemoveEndNewLine(char* string)
 {
