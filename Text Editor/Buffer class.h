@@ -3,11 +3,25 @@
 #define _BUFFER_CLASS_H_
 
 #include <stdio.h>
-#include "Cursor class.h"
+
+
 
 class Buffer
 {
 public:
+    class Cursor
+    {
+    public:
+        Cursor(int, int);
+        void SetRow(int);
+        void SetColumn(int);
+        int GetRow() const;
+        int GetColumn() const;
+
+    private:
+        int row, column;
+    };
+    
     Buffer();  // constructor
     ~Buffer();  // destructor 
     int  Append(char*);
@@ -26,7 +40,12 @@ public:
     int  GetCurRowRemainLength();
     void FlushText();  // sets the buffer to initial state
     int  GetRowSize();
-    Cursor GetCurCursor();
+    void AllocFailureProgTermination(FILE*);
+    void CloseFile(FILE*);
+    Buffer::Cursor GetCurCursor();
+
+ 
+
 
 private:
     const int defaultRowNum = 256;  // will scale this baby up (no)
@@ -36,6 +55,7 @@ private:
     Cursor* curCursor = nullptr;
     char** text = nullptr;
     char* pasteBuffer = nullptr;
+
 
     int InitializeBuffer();
     int GetTxtSize(FILE*);

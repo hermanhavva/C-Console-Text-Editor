@@ -5,7 +5,7 @@
 
 #include "Buffer class.h"
 #include "Auxiliary functions.h"
-#include "Cursor class.h"
+//#include "Cursor class.h"
  
 FILE*  filePtr = nullptr;
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -36,11 +36,10 @@ int main()
 		ExecuteCommand(command, buffer, &ifContinue);
 	}
 
-	CloseFile(filePtr);
+	buffer->CloseFile(filePtr);
 	delete buffer;
 
 	Sleep(100);
-
 
 	return 0;
 }
@@ -49,7 +48,7 @@ int main()
 void HandleUserExit(char* input, Buffer* buffer)
 {
 	printf(">>exiting\n");
-	CloseFile(filePtr);
+	buffer->CloseFile(filePtr);
 
 	delete buffer;
 	buffer = nullptr;
@@ -122,12 +121,12 @@ int HandleSaveToFile(char* input, int inputSize, Buffer* buffer)
 	if (buffer->SaveToFile(filePtr) == -1)  // BETTER PUT A BOOL flag and make methods bool functions
 	{
 		printf(">>failure\n");
-		CloseFile(filePtr);
+		buffer->CloseFile(filePtr);
 		filePtr = nullptr;
 		return -1;
 	}
 
-	CloseFile(filePtr);
+	buffer->CloseFile(filePtr);
 	filePtr = nullptr;
 	printf(">>success\n");
 	return 0;
@@ -172,12 +171,12 @@ int HandleLoadFromFile(char* input, int inputSize, Buffer* buffer)
 	{
 	case 0:
 		printf(">>success\n");
-		CloseFile(filePtr);
+		buffer->CloseFile(filePtr);
 		filePtr = nullptr;
 		return 0;
 	default:
 		printf(">>failure\n");
-		CloseFile(filePtr);
+		buffer->CloseFile(filePtr);
 		buffer->FlushText();
 		filePtr = nullptr;
 		return -1;
@@ -186,7 +185,7 @@ int HandleLoadFromFile(char* input, int inputSize, Buffer* buffer)
 
 int HandleInsert(char* input, int inputSize, Buffer* buffer)
 {
-	Cursor curCursor = buffer->GetCurCursor();  // returns a copy
+	Buffer::Cursor curCursor = buffer->GetCurCursor();  // returns a pointer
 
 	printf("String to insert at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, inputSize, stdin);
@@ -211,7 +210,7 @@ int HandleInsert(char* input, int inputSize, Buffer* buffer)
 
 int HandleInsertReplace(char* input, int inputSize, Buffer* buffer)
 {
-	Cursor curCursor = buffer->GetCurCursor();
+	Buffer::Cursor curCursor = buffer->GetCurCursor();
 
 	printf("Enter the message to insert at position %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, inputSize, stdin);
@@ -281,7 +280,7 @@ int HandleSearch(char* input, int inputSize, Buffer* buffer)
 
 int HandleDelete(Buffer* buffer)
 {
-	Cursor curCursor = buffer->GetCurCursor();
+	Buffer::Cursor curCursor = buffer->GetCurCursor();
 	unsigned int amountOfCharsToDelete = 0;
 
 	printf("Enter amount of symbols to delete at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
@@ -303,7 +302,7 @@ int HandleDelete(Buffer* buffer)
 int HandleCut(Buffer* buffer)
 {
 	unsigned int amountOfCharsToCut = 0;
-	Cursor curCursor = buffer->GetCurCursor();
+	Buffer::Cursor curCursor = buffer->GetCurCursor();
 
 	printf("Enter amount of symbols to cut from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s("%u", &amountOfCharsToCut);
@@ -322,7 +321,7 @@ int HandleCut(Buffer* buffer)
 int HandleCopy(Buffer* buffer)
 {
 	unsigned int amountOfCharsToCopy = 0;
-	Cursor curCursor = buffer->GetCurCursor();
+	Buffer::Cursor curCursor = buffer->GetCurCursor();
 
 	printf("Enter amount of symbols to copy from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s("%u", &amountOfCharsToCopy);
@@ -398,7 +397,7 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 	}
 	catch (const std::bad_alloc&)
 	{
-		AllocFailureProgTermination(buffer, nullptr);
+		buffer->AllocFailureProgTermination(nullptr);
 	}
 
 
@@ -492,7 +491,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 	}
 	catch (const std::bad_alloc&)
 	{
-		AllocFailureProgTermination(buffer, nullptr);
+		buffer->AllocFailureProgTermination(nullptr);
 	}
 
 	fgets(input, COMMANDSIZE, stdin);

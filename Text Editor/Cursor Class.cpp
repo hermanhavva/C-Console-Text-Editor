@@ -1,4 +1,6 @@
 //#include "Cursor.h"
+
+/*
 #include <iostream>
 #include "Cursor class.h"
 
@@ -24,3 +26,4 @@ int Cursor::GetColumn()
 {
     return column;
 }
+*/

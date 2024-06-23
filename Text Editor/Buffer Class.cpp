@@ -2,9 +2,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include "Cursor class.h"
-#include "Auxiliary functions.h"
+//#include "Cursor class.h"
+//#include "Auxiliary functions.h"
 #include "Buffer class.h"
+class Cursor;
+
+
+void Buffer::CloseFile(FILE* filePtr)
+{
+    if (filePtr != nullptr)
+        fclose(filePtr);
+
+    filePtr = nullptr;
+}
+
+void Buffer::AllocFailureProgTermination(FILE* filePtr)
+{
+    perror("Error allocating memory");
+    CloseFile(filePtr);
+    delete this;
+
+    Sleep(1000);
+    exit(EXIT_FAILURE);
+}
 
 Buffer::Buffer()  // constructor
 {
@@ -24,9 +44,35 @@ Buffer::~Buffer()  // destructor
         }
     }
     delete[] pasteBuffer;
+    pasteBuffer = nullptr;
     delete[] text;
     text = nullptr;
 }
+
+Buffer::Cursor::Cursor(int row, int column)
+{
+    this->row = row;
+    this->column = column;
+}
+void Buffer::Cursor::SetRow(int row)
+{
+    this->row = row;
+}
+void Buffer::Cursor::SetColumn(int column)
+{
+    this->column = column;
+}
+
+int Buffer::Cursor::GetRow() const
+{
+    return row;
+}
+
+int Buffer::Cursor::GetColumn() const
+{
+    return column;
+}
+
 
 int Buffer::InitializeBuffer()
 {
@@ -113,7 +159,7 @@ int Buffer::AddRow()
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(this, nullptr);
+        AllocFailureProgTermination(nullptr);
     }
 
     if (curRow < totalRowCounter)  // need to do resize
@@ -127,8 +173,7 @@ int Buffer::AddRow()
         catch (const std::bad_alloc&)
         {
             totalRowCounter--;
-            delete[] buffer;
-            AllocFailureProgTermination(this, nullptr);
+            AllocFailureProgTermination(nullptr);
         }
         text[totalRowCounter][0] = '\0';
 
@@ -148,9 +193,8 @@ int Buffer::AddRow()
             text[curRow + 1] = new char[defaultRowLength];
         }
         catch (const std::bad_alloc&)
-        {
-            delete[] buffer;
-            AllocFailureProgTermination(this, nullptr);
+        {   
+            AllocFailureProgTermination(nullptr);
         }
         text[curRow + 1][0] = '\0';
         totalRowCounter++;
@@ -189,7 +233,7 @@ int Buffer::SaveToFile(FILE* filePtr)
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(this, filePtr);
+        AllocFailureProgTermination(filePtr);
     }
     textToSave[0] = '\0';
 
@@ -225,7 +269,7 @@ int Buffer::LoadFromFile(FILE* filePtr)
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(this, filePtr);
+        AllocFailureProgTermination(filePtr);
     }
 
     fread(textFromTxt, sizeof(char), FILESIZE, filePtr);
@@ -521,7 +565,7 @@ int Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bool ifSaveToB
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(this, nullptr);
+        AllocFailureProgTermination(nullptr);
     }
     addBuffer[0] = '\0';
 
@@ -665,9 +709,9 @@ int Buffer::GetRowSize()
 {
     return defaultRowLength;
 }
-Cursor Buffer::GetCurCursor()
+Buffer::Cursor Buffer::GetCurCursor()  
 {
-    return *curCursor;
+    return *curCursor;  // a copy
 }
 
 
