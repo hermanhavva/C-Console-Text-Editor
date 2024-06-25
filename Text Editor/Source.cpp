@@ -5,7 +5,7 @@
 
 #include "Buffer class.h"
 #include "Auxiliary functions.h"
-//#include "Cursor class.h"
+
  
 FILE*  filePtr = nullptr;
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
