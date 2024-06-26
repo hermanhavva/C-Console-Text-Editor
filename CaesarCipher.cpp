@@ -38,7 +38,7 @@ CaesarCipher::~CaesarCipher()
 string CaesarCipher::Encrypt(string message, const int key)
 {
 	if (key > 26 || key < -26) {
-		throw std::runtime_error(std::string("The key is too big\n"));
+		throw std::runtime_error(std::string("The key is too large\n"));
 	}
 	if (message.length() == 0)
 	{
@@ -51,7 +51,7 @@ string CaesarCipher::Encrypt(string message, const int key)
 	// chunkBuffer[BUFFERCAPACITY] = '\0'
 	if (messageSize >= BUFFERCAPACITY)  // chunk logic: -1 is for counting from 0     
 	{
-		const int chunkAmount = (int)ceil((messageSize + 1) / (BUFFERCAPACITY + 1 - 1));  // rounding and casting
+		const int chunkAmount = static_cast<int>(ceil(static_cast<double>(messageSize + 1) / BUFFERCAPACITY + 1 - 1));
 
 		for (int i = 0; i < chunkAmount; i++)
 		{
@@ -72,7 +72,7 @@ string CaesarCipher::Encrypt(string message, const int key)
 string CaesarCipher::Decrypt(string message, const int key)
 {
 	if (key > 26 || key < -26) {
-		throw std::runtime_error(std::string("The key is too big\n"));
+		throw std::runtime_error(std::string("The key is too large\n"));
 	}
 	if (message.length() == 0)
 	{
@@ -84,14 +84,13 @@ string CaesarCipher::Decrypt(string message, const int key)
 
 	if (messageSize >= BUFFERCAPACITY)  // chunk logic: -1 is for counting from 0     
 	{
-		const int chunkAmount = (int)ceil((messageSize + 1) / (BUFFERCAPACITY + 1 - 1));  // rounding and casting
+		const int chunkAmount = static_cast<int>(ceil(static_cast<double>(messageSize + 1) / BUFFERCAPACITY + 1 - 1));
 
 		for (int i = 0; i < chunkAmount; i++)
 		{
 			decryptedMessage += string(encryptProcAddress(GetNextChunk(message), key));
 		}
 	}
-
 	else
 	{
 		strcpy_s(chunkBuffer, BUFFERCAPACITY, message.c_str());
@@ -100,7 +99,6 @@ string CaesarCipher::Decrypt(string message, const int key)
 	}
 
 	return decryptedMessage;
-
 }
 
 char* CaesarCipher::GetNextChunk(string& message)
@@ -114,12 +112,12 @@ char* CaesarCipher::GetNextChunk(string& message)
 	if (messageSize >= BUFFERCAPACITY)
 	{
 		chunkBuffer[BUFFERCAPACITY] = '\0';
-		message.erase(0, BUFFERCAPACITY + 1);  // +1 because .erase counts from 1 
+		message.erase(0, BUFFERCAPACITY );  
 	}
 	else
 	{
-		chunkBuffer[messageSize] = '\0';
-		message.erase(0, messageSize + 1);  // here it becomes an empty string
+		chunkBuffer[messageSize + 1] = '\0';  // +1 for the next element to be '\0'
+		message.erase(0, messageSize + 1);  // here it becomes an empty string,  +1 for counting from 1
 	}
 	return chunkBuffer;
 }

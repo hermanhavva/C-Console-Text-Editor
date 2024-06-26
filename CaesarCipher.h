@@ -32,7 +32,7 @@ private:
 	HINSTANCE dllHandle = nullptr;
 
 	char* chunkBuffer = nullptr;
-	const size_t BUFFERCAPACITY = 128;
+	const size_t BUFFERCAPACITY = 10;
 };
 
 

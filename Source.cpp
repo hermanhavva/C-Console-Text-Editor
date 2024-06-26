@@ -74,10 +74,11 @@ int main()
 			printf(e.what());
 			break;
 		}
-		string result = cipherInstance->Encrypt("xyz", 1);
+		string result = cipherInstance->Decrypt("123456789012345678909876543211234567890098765432123", 1);
 		printf(result.c_str());
-		break;
+	
 		delete cipherInstance;
+		break;
 		/*
 		PrintMainMenu(buffer);
 		enum Mode command = GetUserCommand(buffer);
