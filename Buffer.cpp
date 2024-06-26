@@ -4,8 +4,8 @@
 #include <windows.h>
 //#include "Cursor class.h"
 //#include "Auxiliary functions.h"
-#include "Buffer class.h"
-class Cursor;
+#include "Buffer.h"
+//class Cursor;
 
 
 void Buffer::CloseFile(FILE* filePtr)
@@ -141,11 +141,11 @@ int Buffer::AddRow()
     int curRow = curCursor->GetRow();
     int curColumn = curCursor->GetColumn();
 
-    if (curRow          >= defaultRowNum - 1 ||
-        curRow          < 0                  ||
+    if (curRow >= defaultRowNum - 1 ||
+        curRow < 0 ||
         totalRowCounter >= defaultRowNum - 1 ||
-        curColumn       < 0                  ||
-        curColumn       >= defaultRowLength)
+        curColumn < 0 ||
+        curColumn >= defaultRowLength)
     {
         printf("\nThe buffer is too small");
         return -1;
@@ -193,7 +193,7 @@ int Buffer::AddRow()
             text[curRow + 1] = new char[defaultRowLength];
         }
         catch (const std::bad_alloc&)
-        {   
+        {
             AllocFailureProgTermination(nullptr);
         }
         text[curRow + 1][0] = '\0';
@@ -709,7 +709,7 @@ int Buffer::GetRowSize()
 {
     return defaultRowLength;
 }
-Buffer::Cursor Buffer::GetCurCursor()  
+Buffer::Cursor Buffer::GetCurCursor()
 {
     return *curCursor;  // a copy
 }

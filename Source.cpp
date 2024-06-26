@@ -3,19 +3,51 @@
 #include <windows.h>
 #include <new>
 
-#include "Buffer class.h"
-#include "Auxiliary functions.h"
+#include "Buffer.h"
+#include <string> 
+#include <stdexcept>
+#include <cmath>
+#include "common.h"
+#include "CaesarCipher.h"
+using namespace std;
 
- 
-FILE*  filePtr = nullptr;
+FILE* filePtr = nullptr;
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
-void ExecuteCommand(enum Mode, Buffer*, bool*); 
-void PrintMainMenu(Buffer*); 
+void ExecuteCommand(enum Mode, Buffer*, bool*);
+void PrintMainMenu(Buffer*);
 enum Mode GetUserCommand(Buffer* buffer);
+/*
+class CaesarCipher
+{
+public:
+	CaesarCipher(string pathToDll);
+	~CaesarCipher();
 
+	string Encrypt(string message, const int key);
+	string Decrypt(string message, const int key);
+	size_t GetBufferCapacity() const;
+
+private:
+	char* GetNextChunk(string&);
+	// dll function pointers
+	typedef char* (*encrypt_ptr_t)(char*, const int);
+	typedef char* (*decrypt_ptr_t)(char*, int);
+	// Const dll function naming
+	const char* encryptProcName = "EncryptStr";
+	const char* decryptProcName = "DecryptStr";
+	// Proc pointers 
+	encrypt_ptr_t encryptProcAddress = nullptr;
+	decrypt_ptr_t decryptProcAddress = nullptr;
+
+	HINSTANCE dllHandle;
+
+	char* chunkBuffer = nullptr;
+	const size_t BUFFERCAPACITY = 128;
+};
+*/
 int main()
 {
 
@@ -31,9 +63,26 @@ int main()
 
 	while (ifContinue)
 	{
+		//CaesarCipher* cipherInstance = nullptr;
+		CaesarCipher* cipherInstance = nullptr;
+		try
+		{
+			cipherInstance = new CaesarCipher("caesarDLL.dll");
+		}
+		catch (const std::exception& e)
+		{
+			printf(e.what());
+			break;
+		}
+		string result = cipherInstance->Encrypt("xyz", 1);
+		printf(result.c_str());
+		break;
+		delete cipherInstance;
+		/*
 		PrintMainMenu(buffer);
 		enum Mode command = GetUserCommand(buffer);
 		ExecuteCommand(command, buffer, &ifContinue);
+		*/
 	}
 
 	buffer->CloseFile(filePtr);
@@ -43,6 +92,133 @@ int main()
 
 	return 0;
 }
+/*
+CaesarCipher::CaesarCipher(string pathToDll)
+{
+	// Initializing an object of wstring
+	wstring temp = wstring(pathToDll.begin(), pathToDll.end());
+	LPCWSTR wideStringPath = temp.c_str();
+
+	dllHandle = LoadLibrary(TEXT("C:\\C projects\\C-Console-Text-Editor1\\Text Editor\\caesarDLL\\x64\\Debug\\caesarDLL.dll"));
+	if (dllHandle == nullptr || dllHandle == INVALID_HANDLE_VALUE)
+	{
+		throw std::runtime_error(std::string("Failed to load the DLL\n"));
+	}
+
+	encryptProcAddress = (encrypt_ptr_t)GetProcAddress(dllHandle, encryptProcName);
+	decryptProcAddress = (decrypt_ptr_t)GetProcAddress(dllHandle, decryptProcName);
+
+	if (decryptProcAddress == nullptr || encryptProcAddress == nullptr)
+	{
+		FreeLibrary(dllHandle);
+		dllHandle = nullptr;
+		throw std::runtime_error(std::string("Failed to find the procedure\n"));
+	}
+
+	chunkBuffer = new char[BUFFERCAPACITY + 1];  // +1 for '\0'
+}
+CaesarCipher::~CaesarCipher()
+{
+	FreeLibrary(dllHandle);
+	delete[] chunkBuffer;
+}
+
+string CaesarCipher::Encrypt(string message, const int key)
+{
+	if (key > 26 || key < -26) {
+		throw std::runtime_error(std::string("The key is too big\n"));
+	}
+	if (message.length() == 0)
+	{
+		return "";
+	}
+
+	size_t messageSize = message.length() - 1;  // counting from 0
+	string encryptedMessage = "";
+
+	// chunkBuffer[BUFFERCAPACITY] = '\0'
+	if (messageSize >= BUFFERCAPACITY)  // chunk logic: -1 is for counting from 0     
+	{
+		const int chunkAmount = (int)ceil((messageSize + 1) / (BUFFERCAPACITY + 1 - 1));  // rounding and casting
+
+		for (int i = 0; i < chunkAmount; i++)
+		{
+			encryptedMessage += string(encryptProcAddress(GetNextChunk(message), key));
+		}
+	}
+
+	else
+	{
+		strcpy_s(chunkBuffer, BUFFERCAPACITY, message.c_str());
+		encryptProcAddress(chunkBuffer, key);
+		encryptedMessage = string(chunkBuffer);
+	}
+
+	return encryptedMessage;
+}
+
+string CaesarCipher::Decrypt(string message, const int key)
+{
+	if (key > 26 || key < -26) {
+		throw std::runtime_error(std::string("The key is too big\n"));
+	}
+	if (message.length() == 0)
+	{
+		return "";
+	}
+
+	size_t messageSize = message.length() - 1;  // counting from 0
+	string decryptedMessage = "";
+
+	if (messageSize >= BUFFERCAPACITY)  // chunk logic: -1 is for counting from 0     
+	{
+		const int chunkAmount = (int)ceil((messageSize + 1) / (BUFFERCAPACITY + 1 - 1));  // rounding and casting
+
+		for (int i = 0; i < chunkAmount; i++)
+		{
+			decryptedMessage += string(encryptProcAddress(GetNextChunk(message), key));
+		}
+	}
+
+	else
+	{
+		strcpy_s(chunkBuffer, BUFFERCAPACITY, message.c_str());
+		decryptProcAddress(chunkBuffer, key);
+		decryptedMessage = string(chunkBuffer);
+	}
+
+	return decryptedMessage;
+
+}
+
+char* CaesarCipher::GetNextChunk(string& message)
+{
+	size_t messageSize = message.length() - 1;  // -1 for counting from 0 
+
+	for (size_t index = 0; index <= BUFFERCAPACITY - 1 && index <= messageSize; index++)
+	{
+		chunkBuffer[index] = message[index];
+	}
+	if (messageSize >= BUFFERCAPACITY)
+	{
+		chunkBuffer[BUFFERCAPACITY] = '\0';
+		message.erase(0, BUFFERCAPACITY + 1);  // +1 because .erase counts from 1 
+	}
+	else
+	{
+		chunkBuffer[messageSize] = '\0';
+		message.erase(0, messageSize + 1);  // here it becomes an empty string
+	}
+	return chunkBuffer;
+}
+
+size_t CaesarCipher::GetBufferCapacity() const
+{
+	return BUFFERCAPACITY;
+}
+
+*/
+
 
 
 void HandleUserExit(char* input, Buffer* buffer)

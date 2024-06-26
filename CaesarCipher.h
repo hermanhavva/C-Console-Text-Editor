@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _CAESAR_CIPHER_H
 #define _CAESAR_CIPHER_H_
 
@@ -11,13 +12,13 @@ class CaesarCipher
 public:
 	CaesarCipher(string pathToDll);
 	~CaesarCipher();
-	
+
 	string Encrypt(string message, const int key);
 	string Decrypt(string message, const int key);
 	size_t GetBufferCapacity() const;
 
 private:
-	char* GetNextChunk(string);
+	char* GetNextChunk(string&);
 	// dll function pointers
 	typedef char* (*encrypt_ptr_t)(char*, const int);
 	typedef char* (*decrypt_ptr_t)(char*, int);
@@ -29,7 +30,7 @@ private:
 	decrypt_ptr_t decryptProcAddress = nullptr;
 
 	HINSTANCE dllHandle = nullptr;
-	
+
 	char* chunkBuffer = nullptr;
 	const size_t BUFFERCAPACITY = 128;
 };
