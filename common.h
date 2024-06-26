@@ -1,8 +1,9 @@
+#pragma once
 
 #ifndef _AUXILIARY_FUNCTIONS_
 #define _AUXILIARY_FUNCTIONS_
 
-#include "Buffer class.h"
+#include "Buffer.h"
 #include <stdio.h>
 
 int  RemoveEndNewLine(char*);

@@ -1,6 +1,6 @@
-#include "Buffer class.h"
+#include "Buffer.h"
 #include "windows.h"
-#include "Auxiliary functions.h"
+#include "common.h"
 
 
 int RemoveEndNewLine(char* string)

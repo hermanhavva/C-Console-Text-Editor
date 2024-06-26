@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef _BUFFER_CLASS_H_
 #define _BUFFER_CLASS_H_
@@ -21,7 +22,7 @@ public:
     private:
         int row, column;
     };
-    
+
     Buffer();  // constructor
     ~Buffer();  // destructor 
     int  Append(char*);
@@ -44,7 +45,7 @@ public:
     void CloseFile(FILE*);
     Buffer::Cursor GetCurCursor();
 
- 
+
 
 
 private:
