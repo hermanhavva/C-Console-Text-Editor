@@ -1,5 +1,6 @@
 #include "Buffer.h"
 #include "windows.h"
+#include <string>
 #include "common.h"
 
 

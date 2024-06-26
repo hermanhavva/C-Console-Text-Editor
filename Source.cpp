@@ -74,7 +74,7 @@ int main()
 			printf(e.what());
 			break;
 		}
-		string result = cipherInstance->Decrypt("123456789012345678909876543211234567890098765432123", 1);
+		string result = cipherInstance->DecryptStr("12345123451234512345123451234512345", 1);
 		printf(result.c_str());
 	
 		delete cipherInstance;
