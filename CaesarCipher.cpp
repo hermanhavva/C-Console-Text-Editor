@@ -1,8 +1,11 @@
 #include "CaesarCipher.h"
 #include <string>
 #include <windows.h>
+#include <iostream>
 #include <stdexcept>
 #include <cmath>
+
+#include <fstream>
 
 CaesarCipher::CaesarCipher(string pathToDll)
 {
@@ -36,70 +39,111 @@ CaesarCipher::~CaesarCipher()
 	delete[] chunkBuffer;
 }
 
-string CaesarCipher::EncryptTxt(string message, const int key, string fromPath, string outPath)
+string CaesarCipher::EncryptTxt(const int key, string fromPath, string toPath)
 {
-	if (!ifKeyValid(key)) {
+	if (!ifKeyValid(key)) 
+	{
 		throw std::runtime_error(std::string("The key is too large must be -26<key<26\n"));
 	}
-	if (!ifLenValid(message))
+
+	std::ifstream fileFrom;
+	std::fstream fileTo;
+	fileFrom.open(fromPath, std::ios::binary);
+
+	fileTo.open(toPath);
+	
+	if(!fileTo.is_open())
 	{
+		printf("Could not open the file\n");
 		return "";
 	}
 
-	size_t messageSize = message.length() - 1;  // counting from 0
+	char curCh;
+	size_t counter = 0;
 	string encryptedMessage = "";
 
-	// chunkBuffer[BUFFERCAPACITY] = '\0'
-	if (messageSize >= BUFFERCAPACITY)  // chunk logic: -1 is for counting from 0     
+	while (fileFrom.get(curCh))
 	{
-		const int chunkAmount = static_cast<int>(ceil(static_cast<double>(messageSize + 1) / BUFFERCAPACITY + 1 - 1));
-
-		for (int i = 0; i < chunkAmount; i++)
+		if (isPrintable(curCh))
 		{
-			encryptedMessage += string(encryptProcAddress(GetNextChunkFromTxt(message, fromPath), key));
+			chunkBuffer[counter] = curCh;
+			counter++;
+			
+			if (counter == BUFFERCAPACITY)
+			{
+				chunkBuffer[BUFFERCAPACITY] = '\0';
+				encryptedMessage += string(encryptProcAddress(chunkBuffer, key));
+				counter = 0;
+			}
 		}
 	}
-
-	else
+	if (counter > 0)  // we need to run encrypt again
 	{
-		strcpy_s(chunkBuffer, BUFFERCAPACITY, message.c_str());
-		encryptProcAddress(chunkBuffer, key);
-		encryptedMessage = string(chunkBuffer);
+		chunkBuffer[counter] = '\0';
+		encryptedMessage += string(encryptProcAddress(chunkBuffer, key));
 	}
+
+	fileTo << encryptedMessage;
+	fileTo.close();
+	fileFrom.close();
 
 	return encryptedMessage;
 }
 
-string CaesarCipher::DecryptTxt(string message, const int key, string fromTxtPath, string outPath)  
+string CaesarCipher::DecryptTxt(const int key, string fromPath, string toPath)  
 {
-	if (!ifKeyValid(key)) {
+	if (!ifKeyValid(key))
+	{
 		throw std::runtime_error(std::string("The key is too large must be -26<key<26\n"));
 	}
-	if (!ifLenValid(message))
+
+	std::ifstream fileFrom;
+	std::fstream fileTo;
+
+	fileFrom.open(fromPath, std::ios::binary);
+	fileTo.open(toPath);
+
+	if (!fileTo.is_open())
 	{
+		printf("Could not open the file\n");
 		return "";
 	}
 
-	size_t messageSize = message.length() - 1;  // counting from 0
+	char curCh;
+	size_t counter = 0;
 	string decryptedMessage = "";
 
-	if (messageSize >= BUFFERCAPACITY)  // chunk logic: -1 is for counting from 0     
+	while (fileFrom.get(curCh))
 	{
-		const int chunkAmount = static_cast<int>(ceil(static_cast<double>(messageSize + 1) / BUFFERCAPACITY + 1 - 1));
-
-		for (int i = 0; i < chunkAmount; i++)
+		if (isPrintable(curCh))
 		{
-			decryptedMessage += string(encryptProcAddress(GetNextChunkFromTxt(message, fromTxtPath), key));
+			chunkBuffer[counter] = curCh;
+			counter++;
+
+			if (counter == BUFFERCAPACITY)
+			{
+				chunkBuffer[BUFFERCAPACITY] = '\0';
+				decryptedMessage += string(decryptProcAddress(chunkBuffer, key));
+				counter = 0;
+			}
 		}
 	}
-	else
+	if (counter > 0)  // we need to put to run decrypt again
 	{
-		strcpy_s(chunkBuffer, BUFFERCAPACITY, message.c_str());
-		decryptProcAddress(chunkBuffer, key);
-		decryptedMessage = string(chunkBuffer);
+		chunkBuffer[counter] = '\0';
+		decryptedMessage += string(decryptProcAddress(chunkBuffer, key));
 	}
 
+	fileTo << decryptedMessage;
+	fileTo.close();
+	fileFrom.close();
+
 	return decryptedMessage;
+}
+
+bool CaesarCipher::isPrintable(char ch) const
+{
+	return std::isprint(static_cast<unsigned char>(ch)) || ch == '\n';
 }
 
 char* CaesarCipher::GetNextChunkFromTxt(string& message, string pathToTxt)

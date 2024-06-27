@@ -60,7 +60,7 @@ int main()
 
 	Buffer* buffer = new Buffer();
 	bool ifContinue = true;
-
+	
 	while (ifContinue)
 	{
 		//CaesarCipher* cipherInstance = nullptr;
@@ -74,11 +74,16 @@ int main()
 			printf(e.what());
 			break;
 		}
-		string result = cipherInstance->DecryptStr("12345123451234512345123451234512345", 1);
+		string result = cipherInstance->DecryptTxt(1,"C:\\C projects\\C-Console-Text-Editor1\\test.txt", "test1.txt");
 		printf(result.c_str());
-	
+		
 		delete cipherInstance;
 		break;
+		
+
+
+
+
 		/*
 		PrintMainMenu(buffer);
 		enum Mode command = GetUserCommand(buffer);

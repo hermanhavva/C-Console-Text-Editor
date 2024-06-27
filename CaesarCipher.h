@@ -12,8 +12,8 @@ public:
 	CaesarCipher(string pathToDll);
 	~CaesarCipher();
 
-	string EncryptTxt(string message, const int key, string, string);
-	string DecryptTxt(string message, const int key, string fromPath, string outPath);
+	string EncryptTxt(const int key, string, string);
+	string DecryptTxt(const int key, string fromPath, string outPath);
 	string EncryptStr(string message, const int key);
 	string DecryptStr(string message, const int key);
 	size_t GetBufferCapacity() const;
@@ -21,6 +21,7 @@ public:
 private:
 	char* GetNextChunkFromTxt(string&, string);
 	char* GetNextChunkFromStr(string&);
+	bool  isPrintable(char) const;
 	bool  ifLenValid(string message) const; 
 	bool  ifKeyValid(const int key) const;
 
