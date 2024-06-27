@@ -221,7 +221,7 @@ string CaesarCipher::DecryptStr(string message, const int key)
 
 		for (int i = 0; i < chunkAmount; i++)
 		{
-			decryptedMessage += string(encryptProcAddress(GetNextChunkFromStr(message), key));
+			decryptedMessage += string(decryptProcAddress(GetNextChunkFromStr(message), key));
 		}
 	}
 	else
