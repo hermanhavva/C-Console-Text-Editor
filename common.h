@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef _AUXILIARY_FUNCTIONS_
 #define _AUXILIARY_FUNCTIONS_
 
