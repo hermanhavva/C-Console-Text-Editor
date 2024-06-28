@@ -1,14 +1,418 @@
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <windows.h>
-//#include "Cursor class.h"
-//#include "Auxiliary functions.h"
+#include "TextEditorCLI.h"
 //#include "Buffer.h"
-//class Cursor;
+#include <windows.h>
+#include <new>
+#include "common.h"
+#include "CommandEnum.h"
 
-/*
-void Buffer::CloseFile(FILE* filePtr)
+TextEditor::TextEditor(const int rowNum, const int rowLength)
+{
+	buffer = new Buffer(rowNum, rowLength);
+}
+
+TextEditor::~TextEditor()
+{
+	CloseFile(filePtr);
+    filePtr = nullptr;
+	delete buffer;
+}
+
+void TextEditor::ExecuteCommand(enum Mode command, bool* ifContinue)
+{
+	char* input = nullptr;
+	int inputSize = buffer->GetRowSize() + 1;
+
+	try
+	{
+		input = new char[inputSize];
+	}
+	catch (const std::bad_alloc&)
+	{
+		AllocFailureProgTermination(nullptr, buffer);
+	}
+
+	switch (command)
+	{
+	case USEREXIT:
+		*ifContinue = false;
+		HandleUserExit(input);
+		break;
+
+	case APPEND:
+		HandleAppend(input, inputSize);
+		break;
+
+	case NEWLINE:
+		HandleNewLine();
+		break;
+
+	case SAVETOFILE:
+		HandleSaveToFile(input, inputSize);
+		break;
+
+	case LOADFROMFILE:
+		HandleLoadFromFile(input, inputSize);  // problem reading the file
+		break;
+
+	case PRINTCURRENT:
+		buffer->PrintCurrent();
+		break;
+
+	case INSERT:
+		HandleInsert(input, inputSize);
+		break;
+
+	case INSERTREPLACE:
+		HandleInsertReplace(input, inputSize);
+		break;
+
+	case SETCURSOR:
+		HandleSetCursor();
+		break;
+
+	case SEARCH:
+		HandleSearch(input, inputSize);
+		break;
+	case DELETESTR:
+		HandleDelete();
+		break;
+	case CUT:
+		HandleCut();
+		break;
+	case COPY:
+		HandleCopy();
+		break;
+	case PASTE:
+		HandlePaste();
+		break;
+
+	case CLS:
+		system("cls");
+		break;
+
+	case UNDEFINED:
+		break;
+
+	}
+	delete[] input;
+	input = nullptr;
+}
+
+void TextEditor::HandleUserExit(char* input)
+{
+	printf(">>exiting\n");
+	CloseFile(filePtr);
+
+	delete buffer;
+	buffer = nullptr;
+
+	delete[] input;
+	input = nullptr;
+
+	Sleep(100);
+	exit(0);
+}
+
+int TextEditor::HandleAppend(char* input, int inputSize)
+{
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	RemoveEndNewLine(input);  // removing '\n'
+	system("cls");
+
+	if (buffer->Append(input) == 0)
+	{
+		printf(">>success\n");
+		return 0;
+	}
+	else
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+}
+
+int TextEditor::HandleNewLine()
+{
+	system("cls");
+	if (buffer->AddRow() == 0)
+	{
+		printf(">>success\n");
+		return 0;
+	}
+	printf(">>failure\n");
+	return -1;
+}
+
+int TextEditor::HandleSaveToFile(char* input, int inputSize)
+{
+	errno_t err;  // to track the execution of fopen_s()
+	printf("\nEnter the filename: ");
+	fgets(input, inputSize, stdin);
+
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	RemoveEndNewLine(input);  // removing '\n'
+
+	err = fopen_s(&filePtr, input, "a+");
+	system("cls");
+
+	if (err != 0 || filePtr == nullptr)  // returns 0 if successful
+	{
+		printf("\nCould not open the file >>failure");
+		return -1;
+	}
+	if (buffer->SaveToFile(filePtr) == -1)  // BETTER PUT A BOOL flag and make methods bool functions
+	{
+		printf(">>failure\n");
+		CloseFile(filePtr);
+		filePtr = nullptr;
+		return -1;
+	}
+
+	CloseFile(filePtr);
+	filePtr = nullptr;
+	printf(">>success\n");
+	return 0;
+
+}
+
+int TextEditor::HandleLoadFromFile(char* input, int inputSize)
+{
+	errno_t err;  // to track the execution of fopen_s() 
+	printf("\nCurrent text will be deleted, 1 - continue, 0 - cancel:\n");
+
+	fgets(input, inputSize, stdin);
+	RemoveEndNewLine(input);
+
+	if (input[0] == '0' || !IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	printf("\nEnter the filename: ");
+
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	RemoveEndNewLine(input);
+
+	err = fopen_s(&filePtr, input, "r");
+	if (err != 0 || filePtr == NULL)  // returns 0 if successful
+	{
+		system("cls");
+		printf("\nCould not open the file\n");
+		return -1;
+	}
+	system("cls");
+
+	switch (buffer->LoadFromFile(filePtr))
+	{
+	case 0:
+		printf(">>success\n");
+		CloseFile(filePtr);
+		filePtr = nullptr;
+		return 0;
+	default:
+		printf(">>failure\n");
+		CloseFile(filePtr);
+		buffer->FlushText();
+		filePtr = nullptr;
+		return -1;
+	}
+}
+
+int TextEditor::HandleInsert(char* input, int inputSize)
+{
+	Buffer::Cursor curCursor = buffer->GetCurCursor();  // returns a pointer
+
+	printf("String to insert at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	RemoveEndNewLine(input);  // for omitting '\n'
+	system("cls");
+
+	if (buffer->InsertAtCursorPos(input) == -1)
+	{
+		printf("<<failure\n");
+		return -1;
+	}
+
+	printf("<<success\n");
+	return 0;
+}
+
+int TextEditor::HandleInsertReplace(char* input, int inputSize)
+{
+	Buffer::Cursor curCursor = buffer->GetCurCursor();
+
+	printf("Enter the message to insert at position %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+
+	RemoveEndNewLine(input);
+	system("cls");
+
+	if (buffer->InsertReplaceAtCursorPos(input) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	printf(">>success\n");
+
+	return 0;
+}
+
+int TextEditor::HandleSetCursor()
+{
+	int row = 0;
+	int column = 0;
+
+	printf("\nEnter the Row: ");
+
+	scanf_s(" %d", &row);
+	printf("Enter the Column: ");
+	scanf_s(" %d", &column);
+
+	while ((getchar()) != '\n');  // '\n' to get out of the in buffer
+	system("cls");
+
+
+	if (buffer->SetCursorPosition(row, column) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	printf(">>success\n");
+	return 0;
+
+}
+
+int TextEditor::HandleSearch(char* input, int inputSize)
+{
+	printf("Enter the substring to look for: ");
+	fgets(input, inputSize, stdin);
+	if (!IsInputSizeValid(input, inputSize))
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	RemoveEndNewLine(input);
+	system("cls");
+	buffer->SearchSubstrPos(input);
+
+	return 0;
+}
+
+int TextEditor::HandleDelete()
+{
+	Buffer::Cursor curCursor = buffer->GetCurCursor();
+	unsigned int amountOfCharsToDelete = 0;
+
+	printf("Enter amount of symbols to delete at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	scanf_s(" %u", &amountOfCharsToDelete);
+	while ((getchar()) != '\n');  // to remove '\n' from stdin
+	system("cls");
+
+	if (buffer->DeleteAtCursorPos(amountOfCharsToDelete, false) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+
+	printf(">>success\n");
+
+	return 0;
+}
+
+int TextEditor::HandleCut()
+{
+	unsigned int amountOfCharsToCut = 0;
+	Buffer::Cursor curCursor = buffer->GetCurCursor();
+
+	printf("Enter amount of symbols to cut from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	scanf_s("%u", &amountOfCharsToCut);
+	while ((getchar()) != '\n');  // to get '\n' out of stdin
+	system("cls");
+
+	if (buffer->DeleteAtCursorPos(amountOfCharsToCut, true) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
+	return 0;
+}
+
+int TextEditor::HandleCopy()
+{
+	unsigned int amountOfCharsToCopy = 0;
+	Buffer::Cursor curCursor = buffer->GetCurCursor();
+
+	printf("Enter amount of symbols to copy from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	scanf_s("%u", &amountOfCharsToCopy);
+	while ((getchar()) != '\n');  // to get '\n' out of stdin
+	system("cls");
+
+	if (buffer->CopyAtCursorPos(amountOfCharsToCopy) == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
+	return 0;
+}
+
+int TextEditor::HandlePaste()
+{
+	system("cls");
+	if (buffer->PasteAtCursorPos() == -1)
+	{
+		printf(">>failure\n");
+		return -1;
+	}
+	printf(">>success\n");
+	return 0;
+}
+
+void TextEditor::PrintMainMenu() const
+{
+	int curLength = buffer->GetCurRowRemainLength();
+	printf("________________________________\n");
+	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit,\t1 - append,\t2 - newline,\t"
+		"3 - save to a file,\t4 - load from file,\t5 - print current,\n6 - insert,\t7 - insert & replace,\t\t"
+		"8 - search,\t\t9 - set cursor pos,\t10 - delete,\n"
+		"11 - undo,\t12 - redo,\t13 - cut,\t14 - copy,\t\t15 - paste;\t\t16 - clean screen\n", curLength);
+}
+
+void TextEditor::CloseFile(FILE* filePtr)
 {
     if (filePtr != nullptr)
         fclose(filePtr);
@@ -16,23 +420,20 @@ void Buffer::CloseFile(FILE* filePtr)
     filePtr = nullptr;
 }
 
-void Buffer::AllocFailureProgTermination(FILE* filePtr)
-{
-    perror("Error allocating memory");
-    CloseFile(filePtr);
-    delete this;
 
-    Sleep(1000);
-    exit(EXIT_FAILURE);
-}
+//
+// BUFFFER LOGIC 
+//				 
 
-Buffer::Buffer()  // constructor
+TextEditor::Buffer::Buffer(const int defaultRowNum, const int defaultRowLength)  // constructor
 {
     curCursor = new Cursor(0, 0);
+    this->defaultRowNum = defaultRowNum;
+    this->defaultRowLength = defaultRowLength;
     InitializeBuffer();
 }
 
-Buffer::~Buffer()  // destructor 
+TextEditor::Buffer::~Buffer()  // destructor 
 {
     delete curCursor;
     curCursor = nullptr;
@@ -49,32 +450,33 @@ Buffer::~Buffer()  // destructor
     text = nullptr;
 }
 
-Buffer::Cursor::Cursor(int row, int column)
+TextEditor::Buffer::Cursor::Cursor(int row, int column)
 {
     this->row = row;
     this->column = column;
 }
-void Buffer::Cursor::SetRow(int row)
+
+void TextEditor::Buffer::Cursor::SetRow(int row)
 {
     this->row = row;
 }
-void Buffer::Cursor::SetColumn(int column)
+
+void TextEditor::Buffer::Cursor::SetColumn(int column)
 {
     this->column = column;
 }
 
-int Buffer::Cursor::GetRow() const
+int TextEditor::Buffer::Cursor::GetRow() const
 {
     return row;
 }
 
-int Buffer::Cursor::GetColumn() const
+int TextEditor::Buffer::Cursor::GetColumn() const
 {
     return column;
 }
 
-
-int Buffer::InitializeBuffer()
+int TextEditor::Buffer::InitializeBuffer()
 {
     try
     {
@@ -109,7 +511,7 @@ int Buffer::InitializeBuffer()
     return 0;
 }
 
-int Buffer::Append(char* input) // update cursor with the values of the end of the buffer 
+int TextEditor::Buffer::Append(char* input) // update cursor with the values of the end of the buffer 
 {
     int curRow = totalRowCounter;
 
@@ -131,7 +533,7 @@ int Buffer::Append(char* input) // update cursor with the values of the end of t
     return 0;
 }
 
-int Buffer::AddRow()
+int TextEditor::Buffer::AddRow()
 {
     if (text == nullptr)
     {
@@ -151,15 +553,15 @@ int Buffer::AddRow()
         return -1;
     }
 
-    char* buffer = nullptr;
+    char* addBuffer = nullptr;
     try
     {
-        buffer = new char[defaultRowLength];
-        buffer[0] = '\0';
+        addBuffer = new char[defaultRowLength];
+        addBuffer[0] = '\0';
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(nullptr);
+        AllocFailureProgTermination(nullptr, this);
     }
 
     if (curRow < totalRowCounter)  // need to do resize
@@ -173,14 +575,14 @@ int Buffer::AddRow()
         catch (const std::bad_alloc&)
         {
             totalRowCounter--;
-            AllocFailureProgTermination(nullptr);
+            AllocFailureProgTermination(nullptr, this);
         }
         text[totalRowCounter][0] = '\0';
 
         for (int rowIndex = totalRowCounter - 1; rowIndex > curRow; rowIndex--)
         {
-            strcpy_s(buffer, defaultRowLength, text[rowIndex]);
-            strcpy_s(text[rowIndex + 1], defaultRowLength, buffer);
+            strcpy_s(addBuffer, defaultRowLength, text[rowIndex]);
+            strcpy_s(text[rowIndex + 1], defaultRowLength, addBuffer);
         }
 
         text[curRow + 1][0] = '\0';
@@ -194,7 +596,7 @@ int Buffer::AddRow()
         }
         catch (const std::bad_alloc&)
         {
-            AllocFailureProgTermination(nullptr);
+            AllocFailureProgTermination(nullptr, this);
         }
         text[curRow + 1][0] = '\0';
         totalRowCounter++;
@@ -202,22 +604,22 @@ int Buffer::AddRow()
 
     if (curColumn < strlen(text[curRow]))   // need to move text to another row
     {
-        buffer[0] = '\0';
+        addBuffer[0] = '\0';
         for (int columnIndex = curColumn; columnIndex < strlen(text[curRow]); columnIndex++)
         {
             char curSymbol = text[curRow][columnIndex];
-            strncat_s(buffer, defaultRowLength, &curSymbol, 1);
+            strncat_s(addBuffer, defaultRowLength, &curSymbol, 1);
         }
         text[curRow][curColumn] = '\0';
-        strcat_s(text[curRow + 1], defaultRowLength, buffer);
+        strcat_s(text[curRow + 1], defaultRowLength, addBuffer);
     }
     SetCursorPosition(curRow + 1, 0);
 
-    delete[] buffer;
+    delete[] addBuffer;
     return 0;
 }
 
-int Buffer::SaveToFile(FILE* filePtr)
+int TextEditor::Buffer::SaveToFile(FILE* filePtr)
 {
     char newLineCh = '\n';
 
@@ -233,7 +635,7 @@ int Buffer::SaveToFile(FILE* filePtr)
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(filePtr);
+        AllocFailureProgTermination(filePtr, this);
     }
     textToSave[0] = '\0';
 
@@ -250,7 +652,7 @@ int Buffer::SaveToFile(FILE* filePtr)
 
 }
 
-int Buffer::LoadFromFile(FILE* filePtr)
+int TextEditor::Buffer::LoadFromFile(FILE* filePtr)
 {
     if (filePtr == nullptr)
         return -1;
@@ -269,7 +671,7 @@ int Buffer::LoadFromFile(FILE* filePtr)
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(filePtr);
+        AllocFailureProgTermination(filePtr, this);
     }
 
     fread(textFromTxt, sizeof(char), FILESIZE, filePtr);
@@ -316,7 +718,7 @@ int Buffer::LoadFromFile(FILE* filePtr)
     return 0;
 }
 
-void Buffer::PrintCurrent()
+void TextEditor::Buffer::PrintCurrent()
 {
     printf("Current text: \n________________________________\n");
 
@@ -361,7 +763,7 @@ void Buffer::PrintCurrent()
     printf("\n");
 }
 
-int Buffer::InsertAtCursorPos(char* input)
+int TextEditor::Buffer::InsertAtCursorPos(char* input)
 {
     int row = curCursor->GetRow();
     int column = curCursor->GetColumn();
@@ -392,7 +794,7 @@ int Buffer::InsertAtCursorPos(char* input)
         strcat_s(text[row], curRowMaxSize, input);
 
     }
-    else if ((rowTextLength ) > column)
+    else if ((rowTextLength /*/ + 1*/) > column)
     {
         char* addBuffer = new char[curRowMaxSize];
         addBuffer[0] = '\0';
@@ -418,7 +820,7 @@ int Buffer::InsertAtCursorPos(char* input)
     return 0;
 }
 
-int Buffer::InsertReplaceAtCursorPos(char* input)
+int TextEditor::Buffer::InsertReplaceAtCursorPos(char* input)
 {
     int row = curCursor->GetRow();
     int column = curCursor->GetColumn();
@@ -451,7 +853,7 @@ int Buffer::InsertReplaceAtCursorPos(char* input)
     return 0;
 }
 
-void Buffer::SearchSubstrPos(char* subString)
+void TextEditor::Buffer::SearchSubstrPos(char* subString)
 {
     printf("It can be found on positions(row|column): ");
 
@@ -475,80 +877,7 @@ void Buffer::SearchSubstrPos(char* subString)
     printf("\n");
 }
 
-int Buffer::InsertAtCursorPos(char* strToInsert)
-{
-    int row, column;
-
-
-    if (row > totalRowCounter || column > ROWSIZE) {
-        printf(">>Row/Column index too big (might use newline first)\n");
-        return -1;
-    }
-    int rowTextLength = strlen(buffer[row]);  // on this index there is '\0'
-    int insertTextLength = strlen(input);
-    int curRowMaxSize = ROWSIZE;  // size is dynamic
-
-    if ((insertTextLength + rowTextLength + 2) - curRowMaxSize > 0 && (insertTextLength + rowTextLength + 2) - curRowMaxSize < offset)
-    {   // the logic can handle +30 expansion, but not more
-        buffer[row] = (char*)realloc(buffer[row], sizeof(char) * (curRowMaxSize + offset));
-
-        if (buffer[row] == NULL)
-            AllocFailureProgTermination();
-
-        curRowMaxSize += offset;
-    }
-    else if ((insertTextLength + rowTextLength + 2) - curRowMaxSize >= offset)
-    {
-        printf(">>The row is full or message too big to insert\n");
-        return -1;
-    }
-
-    if ((rowTextLength + 1) < column)  // add spaces
-    {
-
-        for (int colIndex = rowTextLength; colIndex < column - 1; colIndex++)
-            buffer[row][colIndex] = ' ';
-
-        buffer[row][column - 1] = '\0';
-        strcat_s(buffer[row], curRowMaxSize - 1, input);
-
-        if (row > totalRowCounter)  // so there is '\n' and we need to transfer it to the end
-        {
-            int curLength = strlen(buffer[row]);
-            buffer[row][rowTextLength - 1] = ' ';
-            buffer[row][curLength] = '\n';
-            buffer[row][curLength + 1] = '\0';
-        }
-    }
-    else if ((rowTextLength + 1) > column)
-    {
-        char* addBuffer = (char*)malloc(sizeof(char) * curRowMaxSize - 1);
-        addBuffer[0] = '\0';
-        char ch = '0';
-        for (int colIndex = column; colIndex < rowTextLength; colIndex++)
-        {
-            ch = buffer[row][colIndex];
-            strncat_s(addBuffer, curRowMaxSize - 1, &ch, 1);  // one symbol at a time
-
-        }
-        buffer[row][column] = '\0';
-
-        strcat_s(buffer[row], curRowMaxSize - 1, input);
-        strcat_s(buffer[row], curRowMaxSize - 1, addBuffer);
-
-        free(addBuffer);
-    }
-    else  // only strcat
-    {
-        strcat_s(buffer[row], curRowMaxSize - 1, input);
-    }
-    printf(">>success\n");
-
-    free(input);
-    return 0;
-}
-
-int Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bool ifSaveToBuffer)
+int TextEditor::Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bool ifSaveToBuffer)
 {
     int   row = curCursor->GetRow();
     int   column = curCursor->GetColumn();
@@ -565,7 +894,7 @@ int Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bool ifSaveToB
     }
     catch (const std::bad_alloc&)
     {
-        AllocFailureProgTermination(nullptr);
+        AllocFailureProgTermination(nullptr, this);
     }
     addBuffer[0] = '\0';
 
@@ -607,7 +936,7 @@ int Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bool ifSaveToB
     return 0;
 }
 
-int Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
+int TextEditor::Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
 {
     int row = curCursor->GetRow();
     int column = curCursor->GetColumn();
@@ -638,12 +967,12 @@ int Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
     return 0;
 }
 
-int Buffer::PasteAtCursorPos()
+int TextEditor::Buffer::PasteAtCursorPos()
 {
     return this->InsertAtCursorPos(pasteBuffer);
 }
 
-int Buffer::MoveCursorToEnd()
+int TextEditor::Buffer::MoveCursorToEnd()
 {
     if (text[totalRowCounter] == nullptr)
     {
@@ -654,7 +983,7 @@ int Buffer::MoveCursorToEnd()
     return 0;
 }
 
-void Buffer::FlushText()
+void TextEditor::Buffer::FlushText()
 {
     for (int rowIndex = 1; rowIndex <= totalRowCounter; rowIndex++)
     {
@@ -666,7 +995,7 @@ void Buffer::FlushText()
     totalRowCounter = 0;
 }
 
-int Buffer::SetCursorPosition(int row, int column)
+int TextEditor::Buffer::SetCursorPosition(int row, int column)
 {
     if (row < 0 || row > totalRowCounter || column < 0 || column > strlen(text[row]))
     {
@@ -678,7 +1007,7 @@ int Buffer::SetCursorPosition(int row, int column)
     return 0;
 }
 
-int Buffer::GetCurRowRemainLength()  // returns remaining size of the current row
+int TextEditor::Buffer::GetCurRowRemainLength()  // returns remaining size of the current row
 {
     int remainLength = defaultRowLength;  // by default
     int curRow = curCursor->GetRow();
@@ -693,7 +1022,7 @@ int Buffer::GetCurRowRemainLength()  // returns remaining size of the current ro
     return remainLength;
 }
 
-int Buffer::GetTxtSize(FILE* filePtr)
+int TextEditor::Buffer::GetTxtSize(FILE* filePtr)
 {
     if (filePtr == nullptr)
         return -1;
@@ -705,13 +1034,21 @@ int Buffer::GetTxtSize(FILE* filePtr)
     return fileSize;
 }
 
-int Buffer::GetRowSize()
+int TextEditor::Buffer::GetRowSize()
 {
     return defaultRowLength;
 }
-Buffer::Cursor Buffer::GetCurCursor()
+
+TextEditor::Buffer::Cursor TextEditor::Buffer::GetCurCursor()
 {
     return *curCursor;  // a copy
 }
-*/
+
+void TextEditor::Buffer::CloseFile(FILE* filePtr)
+{
+    if (filePtr != nullptr)
+        fclose(filePtr);
+
+    filePtr = nullptr;
+}
 

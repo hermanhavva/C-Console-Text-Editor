@@ -3,12 +3,14 @@
 #include <windows.h>
 #include <new>
 
-#include "Buffer.h"
+//#include "Buffer.h"
 #include <string> 
 #include <stdexcept>
-#include <cmath>
 #include "common.h"
-#include "CaesarCipher.h"
+#include "CommandEnum.h"
+//#include "common.h"
+//#include "CaesarCipher.h"
+#include "TextEditorCLI.h"
 using namespace std;
 
 FILE* filePtr = nullptr;
@@ -16,9 +18,9 @@ HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
-void ExecuteCommand(enum Mode, Buffer*, bool*);
-void PrintMainMenu(Buffer*);
-enum Mode GetUserCommand(Buffer* buffer);
+//void ExecuteCommand(enum Mode, Buffer*, bool*);
+
+enum Mode GetUserCommand(TextEditor* buffer);
 /*
 class CaesarCipher
 {
@@ -58,12 +60,12 @@ int main()
 	SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
 	system("cls");
 
-	Buffer* buffer = new Buffer();
+	TextEditor* textEditor = new TextEditor(150, 150);
 	bool ifContinue = true;
 	
 	while (ifContinue)
 	{
-		//CaesarCipher* cipherInstance = nullptr;
+		/*
 		CaesarCipher* cipherInstance = nullptr;
 		try
 		{
@@ -74,12 +76,12 @@ int main()
 			printf(e.what());
 			break;
 		}
-		string result = cipherInstance->DecryptTxt(1,"C:\\C projects\\C-Console-Text-Editor1\\test.txt", "test1.txt");
+		string result = cipherInstance->EncryptStr("xyzxyzxyzxyzxyzxyzxyzxyzxyz", 1);
 		printf(result.c_str());
 		
 		delete cipherInstance;
 		break;
-		
+		/*
 
 
 
@@ -89,10 +91,14 @@ int main()
 		enum Mode command = GetUserCommand(buffer);
 		ExecuteCommand(command, buffer, &ifContinue);
 		*/
-	}
+		textEditor->PrintMainMenu();
+		
+		Mode command = GetUserCommand(textEditor);
+		textEditor->ExecuteCommand(command, &ifContinue);
 
-	buffer->CloseFile(filePtr);
-	delete buffer;
+	}
+	
+	delete textEditor;
 
 	Sleep(100);
 
@@ -225,8 +231,7 @@ size_t CaesarCipher::GetBufferCapacity() const
 
 */
 
-
-
+/*
 void HandleUserExit(char* input, Buffer* buffer)
 {
 	printf(">>exiting\n");
@@ -529,8 +534,8 @@ int HandlePaste(Buffer* buffer)
 	}
 	printf(">>success\n");
 	return 0;
-}
-
+}*/
+/*
 enum Mode
 {
 	USEREXIT = 0,
@@ -552,7 +557,7 @@ enum Mode
 	CLS = 16,
 	UNDEFINED
 
-};
+};*/
 
 BOOL WINAPI ConsoleHandler(DWORD signal) {
 	if (signal == CTRL_C_EVENT || signal == CTRL_CLOSE_EVENT || signal == CTRL_BREAK_EVENT ||
@@ -567,7 +572,7 @@ BOOL WINAPI ConsoleHandler(DWORD signal) {
 	return TRUE;
 }
 
-
+/*
 void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 {
 	char* input = nullptr;
@@ -648,8 +653,8 @@ void ExecuteCommand(enum Mode command, Buffer* buffer, bool* ifContinue)
 	}
 	delete[] input;
 	input = nullptr;
-}
-
+}*/
+/*
 void PrintMainMenu(Buffer* buffer)
 {
 	int curLength = buffer->GetCurRowRemainLength();
@@ -659,9 +664,11 @@ void PrintMainMenu(Buffer* buffer)
 		"8 - search,\t\t9 - set cursor pos,\t10 - delete,\n"
 		"11 - undo,\t12 - redo,\t13 - cut,\t14 - copy,\t\t15 - paste;\t\t16 - clean screen\n", curLength);
 }
+*/
 
-enum Mode GetUserCommand(Buffer* buffer)
-{
+
+enum Mode GetUserCommand(TextEditor* textEditor)
+{ 
 	printf("Enter number: ");
 	enum Mode command;
 	char* input = nullptr;
@@ -673,7 +680,7 @@ enum Mode GetUserCommand(Buffer* buffer)
 	}
 	catch (const std::bad_alloc&)
 	{
-		buffer->AllocFailureProgTermination(nullptr);
+		AllocFailureProgTermination(nullptr, textEditor);
 	}
 
 	fgets(input, COMMANDSIZE, stdin);

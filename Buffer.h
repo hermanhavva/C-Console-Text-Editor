@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-
+/*
 
 class Buffer
 {
@@ -45,9 +45,6 @@ public:
     void CloseFile(FILE*);
     Buffer::Cursor GetCurCursor();
 
-
-
-
 private:
     const int defaultRowNum = 256;  // will scale this baby up (no)
     const int defaultRowLength = 100;
@@ -61,6 +58,6 @@ private:
     int InitializeBuffer();
     int GetTxtSize(FILE*);
 };
-
+*/
 #endif  // !_BUFFER_CLASS_H_
 
