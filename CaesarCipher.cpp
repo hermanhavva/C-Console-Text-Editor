@@ -3,35 +3,34 @@
 #include <windows.h>
 #include <iostream>
 #include <stdexcept>
-#include <cmath>
-
 #include <fstream>
 
-CaesarCipher::CaesarCipher(string pathToDll)
+CaesarCipher::CaesarCipher(const std::string pathToDll)
 {
-	// Initializing an object of wstring
-	wstring temp = wstring(pathToDll.begin(), pathToDll.end());
-	LPCWSTR wideStringPath = temp.c_str();
+    // Initializing an object of wstring
+    std::wstring temp = std::wstring(pathToDll.begin(), pathToDll.end());
+    LPCWSTR wideStringPath = temp.c_str();
 
-	dllHandle = LoadLibrary(wideStringPath);
-	if (dllHandle == nullptr || dllHandle == INVALID_HANDLE_VALUE)
-	{
-		throw std::runtime_error(std::string("Failed to load the DLL\n"));
-	}
+    dllHandle = LoadLibrary(wideStringPath);
+    if (dllHandle == nullptr || dllHandle == INVALID_HANDLE_VALUE)
+    {
+        throw std::runtime_error("(Exception at CaesarCipher constructor)Failed to load the DLL\n");
+    }
 
-	encryptProcAddress = (encrypt_ptr_t)GetProcAddress(dllHandle, encryptProcName);
-	decryptProcAddress = (decrypt_ptr_t)GetProcAddress(dllHandle, decryptProcName);
+    encryptProcAddress = (encrypt_ptr_t)GetProcAddress(dllHandle, encryptProcName);
+    decryptProcAddress = (decrypt_ptr_t)GetProcAddress(dllHandle, decryptProcName);
 
-	if (decryptProcAddress == nullptr || encryptProcAddress == nullptr)
-	{
-		FreeLibrary(dllHandle);
-		dllHandle = nullptr;
-		throw std::runtime_error(std::string("Failed to find the procedure\n"));
-	}
+    if (decryptProcAddress == nullptr || encryptProcAddress == nullptr)
+    {
+        FreeLibrary(dllHandle);
+        dllHandle = nullptr;
+        throw std::runtime_error("(Exception at CaesarCipher constructor)Failed to find the procedure\n");
+    }
 
-	chunkBuffer = new char[BUFFERCAPACITY + 1];  // +1 for '\0'
-	chunkBuffer[0] = '\0';
+    chunkBuffer = new char[BUFFERCAPACITY + 1];  // +1 for '\0'
+    chunkBuffer[0] = '\0';
 }
+
 
 CaesarCipher::~CaesarCipher()
 {
@@ -39,7 +38,7 @@ CaesarCipher::~CaesarCipher()
 	delete[] chunkBuffer;
 }
 
-string CaesarCipher::EncryptTxt(const int key, string fromPath, string toPath)
+int CaesarCipher::EncryptTxt(const int key, std::string fromPath, std::string toPath)
 {
 	if (!ifKeyValid(key)) 
 	{
@@ -55,12 +54,12 @@ string CaesarCipher::EncryptTxt(const int key, string fromPath, string toPath)
 	if(!fileTo.is_open())
 	{
 		printf("Could not open the file\n");
-		return "";
+		return -1;
 	}
 
 	char curCh;
 	size_t counter = 0;
-	string encryptedMessage = "";
+	std::string encryptedMessage = "";
 
 	while (fileFrom.get(curCh))
 	{
@@ -72,7 +71,7 @@ string CaesarCipher::EncryptTxt(const int key, string fromPath, string toPath)
 			if (counter == BUFFERCAPACITY)
 			{
 				chunkBuffer[BUFFERCAPACITY] = '\0';
-				encryptedMessage += string(encryptProcAddress(chunkBuffer, key));
+				encryptedMessage += std::string(encryptProcAddress(chunkBuffer, key));
 				counter = 0;
 			}
 		}
@@ -80,17 +79,17 @@ string CaesarCipher::EncryptTxt(const int key, string fromPath, string toPath)
 	if (counter > 0)  // we need to run encrypt again
 	{
 		chunkBuffer[counter] = '\0';
-		encryptedMessage += string(encryptProcAddress(chunkBuffer, key));
+		encryptedMessage += std::string(encryptProcAddress(chunkBuffer, key));
 	}
 
 	fileTo << encryptedMessage;
 	fileTo.close();
 	fileFrom.close();
 
-	return encryptedMessage;
+	return 0;
 }
 
-string CaesarCipher::DecryptTxt(const int key, string fromPath, string toPath)  
+int CaesarCipher::DecryptTxt(const int key, std::string fromPath, std::string toPath)
 {
 	if (!ifKeyValid(key))
 	{
@@ -106,12 +105,12 @@ string CaesarCipher::DecryptTxt(const int key, string fromPath, string toPath)
 	if (!fileTo.is_open())
 	{
 		printf("Could not open the file\n");
-		return "";
+		return -1;
 	}
 
 	char curCh;
 	size_t counter = 0;
-	string decryptedMessage = "";
+	std::string decryptedMessage = "";
 
 	while (fileFrom.get(curCh))
 	{
@@ -123,7 +122,7 @@ string CaesarCipher::DecryptTxt(const int key, string fromPath, string toPath)
 			if (counter == BUFFERCAPACITY)
 			{
 				chunkBuffer[BUFFERCAPACITY] = '\0';
-				decryptedMessage += string(decryptProcAddress(chunkBuffer, key));
+				decryptedMessage += std::string(decryptProcAddress(chunkBuffer, key));
 				counter = 0;
 			}
 		}
@@ -131,14 +130,14 @@ string CaesarCipher::DecryptTxt(const int key, string fromPath, string toPath)
 	if (counter > 0)  // we need to put to run decrypt again
 	{
 		chunkBuffer[counter] = '\0';
-		decryptedMessage += string(decryptProcAddress(chunkBuffer, key));
+		decryptedMessage += std::string(decryptProcAddress(chunkBuffer, key));
 	}
 
 	fileTo << decryptedMessage;
 	fileTo.close();
 	fileFrom.close();
 
-	return decryptedMessage;
+	return 0;
 }
 
 bool CaesarCipher::isPrintable(char ch) const
@@ -146,7 +145,7 @@ bool CaesarCipher::isPrintable(char ch) const
 	return std::isprint(static_cast<unsigned char>(ch)) || ch == '\n';
 }
 
-char* CaesarCipher::GetNextChunkFromTxt(string& message, string pathToTxt)
+char* CaesarCipher::GetNextChunkFromTxt(std::string& message, std::string pathToTxt)
 {
 	size_t messageSize = message.length() - 1;  // -1 for counting from 0 
 
@@ -167,7 +166,7 @@ char* CaesarCipher::GetNextChunkFromTxt(string& message, string pathToTxt)
 	return chunkBuffer;
 }
 
-string CaesarCipher::EncryptStr(string message, const int key)
+std::string CaesarCipher::EncryptStr(std::string message, const int key)
 {
 	if (!ifKeyValid(key)) 
 	{
@@ -179,7 +178,7 @@ string CaesarCipher::EncryptStr(string message, const int key)
 	}
 
 	size_t messageSize = message.length() - 1;  // counting from 0
-	string encryptedMessage = "";
+	std::string encryptedMessage = "";
 
 	// chunkBuffer[BUFFERCAPACITY] = '\0'
 	if (messageSize >= BUFFERCAPACITY)  // chunk logic: -1 is for counting from 0     
@@ -188,7 +187,7 @@ string CaesarCipher::EncryptStr(string message, const int key)
 
 		for (int i = 0; i < chunkAmount; i++)
 		{
-			encryptedMessage += string(encryptProcAddress(GetNextChunkFromStr(message), key));
+			encryptedMessage += std::string(encryptProcAddress(GetNextChunkFromStr(message), key));
 		}
 	}
 
@@ -196,13 +195,13 @@ string CaesarCipher::EncryptStr(string message, const int key)
 	{
 		strcpy_s(chunkBuffer, BUFFERCAPACITY, message.c_str());
 		encryptProcAddress(chunkBuffer, key);
-		encryptedMessage = string(chunkBuffer);
+		encryptedMessage = std::string(chunkBuffer);
 	}
 
 	return encryptedMessage;
 }
 
-string CaesarCipher::DecryptStr(string message, const int key)
+std::string CaesarCipher::DecryptStr(std::string message, const int key)
 {
 	if (!ifKeyValid(key)) {
 		throw std::runtime_error(std::string("The key is too large must be -26<key<26\n"));
@@ -213,7 +212,7 @@ string CaesarCipher::DecryptStr(string message, const int key)
 	}
 
 	size_t messageSize = message.length() - 1;  // counting from 0
-	string decryptedMessage = "";
+	std::string decryptedMessage = "";
 
 	if (messageSize >= BUFFERCAPACITY)  // chunk logic: -1 is for counting from 0     
 	{
@@ -221,20 +220,20 @@ string CaesarCipher::DecryptStr(string message, const int key)
 
 		for (int i = 0; i < chunkAmount; i++)
 		{
-			decryptedMessage += string(decryptProcAddress(GetNextChunkFromStr(message), key));
+			decryptedMessage += std::string(decryptProcAddress(GetNextChunkFromStr(message), key));
 		}
 	}
 	else
 	{
 		strcpy_s(chunkBuffer, BUFFERCAPACITY, message.c_str());
 		decryptProcAddress(chunkBuffer, key);
-		decryptedMessage = string(chunkBuffer);
+		decryptedMessage = std::string(chunkBuffer);
 	}
 
 	return decryptedMessage;
 }
 
-char* CaesarCipher::GetNextChunkFromStr(string& message)
+char* CaesarCipher::GetNextChunkFromStr(std::string& message)
 {
 	size_t messageSize = message.length() - 1;  // -1 for counting from 0 
 
@@ -255,7 +254,7 @@ char* CaesarCipher::GetNextChunkFromStr(string& message)
 	return chunkBuffer;
 }
 
-bool CaesarCipher::ifLenValid(string message) const
+bool CaesarCipher::ifLenValid(std::string message) const
 {
 	return message.length() != 0;
 }

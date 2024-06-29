@@ -1,8 +1,9 @@
-#pragma once
+
 #ifndef _TEXT_EDITOR_CLI_H_
 #define _TEXT_EDITOR_CLI_H_
 #include <stdio.h>
 #include <stdlib.h>
+#include "CaesarCipher.h"
 
 
 class TextEditor
@@ -14,17 +15,17 @@ public:
         class Cursor
         {
         public:
-            Cursor(int, int);
-            void SetRow(int);
-            void SetColumn(int);
-            int GetRow() const;
-            int GetColumn() const;
+            Cursor(size_t, size_t);
+            void SetRow(size_t);
+            void SetColumn(size_t);
+            size_t GetRow() const;
+            size_t GetColumn() const;
 
         private:
-            int row, column;
+            size_t row, column;
         };
 
-        Buffer(const int, const int);  // constructor
+        Buffer(const size_t, const size_t);  // constructor
         ~Buffer();  // destructor 
         int  Append(char*);
         int  AddRow();
@@ -37,19 +38,19 @@ public:
         int  DeleteAtCursorPos(unsigned int, bool);
         int  CopyAtCursorPos(unsigned int);
         int  PasteAtCursorPos();
-        int  SetCursorPosition(int, int);
+        int  SetCursorPosition(size_t, size_t);
         int  MoveCursorToEnd();
-        int  GetCurRowRemainLength();
+        size_t GetCurRowRemainLength();
         void FlushText();  // sets the buffer to initial state
-        int  GetRowSize();
+        size_t  GetRowSize() const;
         Buffer::Cursor GetCurCursor();
         void CloseFile(FILE*);
 
     private:
-        int defaultRowNum = 0;  
-        int defaultRowLength = 0;
+        size_t defaultRowNum = 0;  
+        size_t defaultRowLength = 0;
 
-        int     totalRowCounter = -1;
+        size_t  totalRowCounter = 0;
         Cursor* curCursor = nullptr;
         char**  text = nullptr;
         char*   pasteBuffer = nullptr;
@@ -58,7 +59,10 @@ public:
         int GetTxtSize(FILE*);
     };
 	
-	TextEditor(const int rowNum, const int rowLength);
+    
+
+
+	TextEditor(const int rowNum, const int rowLength, const char* pathToDll);
 	~TextEditor();
     void ExecuteCommand(enum Mode command, bool* ifContinue);
     void PrintMainMenu() const;
@@ -66,23 +70,25 @@ public:
 
 private:
     void HandleUserExit(char* input);
-    int HandleAppend(char* input, int inputSize);
+    int HandleAppend(char* input, size_t inputSize);
     int HandleNewLine();
-    int HandleSaveToFile(char* input, int inputSize);
-    int HandleLoadFromFile(char* input, int inputSize);
-    int HandleInsert(char* input, int inputSize);
-    int HandleInsertReplace(char* input, int inputSize);
+    int HandleSaveToFile(char* input, size_t inputSize);
+    int HandleLoadFromFile(char* input, size_t inputSize);
+    int HandleInsert(char* input, size_t inputSize);
+    int HandleInsertReplace(char* input, size_t inputSize);
     int HandleSetCursor();
-    int HandleSearch(char* input, int inputSize);
+    int HandleSearch(char* input, size_t inputSize);
     int HandleDelete();
     int HandleCut();
     int HandleCopy();
+    int HandleCaesarTxtAction(char* input, size_t inputSize, bool ifEncrypt);
+    
 
     int HandlePaste();
     
+    CaesarCipher* caesarCipher = nullptr;
+    Buffer* buffer = nullptr;
     
-
-	Buffer* buffer = nullptr;
     FILE* filePtr = nullptr;
     // common functions
 

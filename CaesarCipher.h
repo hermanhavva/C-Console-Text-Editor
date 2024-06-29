@@ -4,26 +4,26 @@
 #include <windows.h>
 #include <string>
 
-using namespace std;
+//using namespace std;
 
 class CaesarCipher
 {
 public:
-	CaesarCipher(string pathToDll);
+	CaesarCipher(std::string pathToDll);
 	~CaesarCipher();
 
-	string EncryptTxt(const int key, string, string);
-	string DecryptTxt(const int key, string fromPath, string outPath);
-	string EncryptStr(string message, const int key);
-	string DecryptStr(string message, const int key);
+	int EncryptTxt(const int key, std::string, std::string);
+	int DecryptTxt(const int key, std::string fromPath, std::string outPath);
+	std::string EncryptStr(std::string message, const int key);
+	std::string DecryptStr(std::string message, const int key);
 	size_t GetBufferCapacity() const;
+	bool  ifKeyValid(const int key) const;
 
 private:
-	char* GetNextChunkFromTxt(string&, string);
-	char* GetNextChunkFromStr(string&);
+	char* GetNextChunkFromTxt(std::string&, std::string);
+	char* GetNextChunkFromStr(std::string&);
 	bool  isPrintable(char) const;
-	bool  ifLenValid(string message) const; 
-	bool  ifKeyValid(const int key) const;
+	bool  ifLenValid(std::string message) const;
 
 	// dll function pointers
 	typedef char* (*encrypt_ptr_t)(char*, const int);
@@ -38,7 +38,7 @@ private:
 	HINSTANCE dllHandle = nullptr;
 
 	char* chunkBuffer = nullptr;
-	const size_t BUFFERCAPACITY = 10;
+	static const size_t BUFFERCAPACITY = 10;
 };
 
 

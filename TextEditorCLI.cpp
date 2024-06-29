@@ -1,18 +1,38 @@
-#include "TextEditorCLI.h"
+
 //#include "Buffer.h"
 #include <windows.h>
 #include <new>
-#include "common.h"
-#include "CommandEnum.h"
 
-TextEditor::TextEditor(const int rowNum, const int rowLength)
+#include "CommandEnum.h"
+#include "CaesarCipher.h"
+#include "TextEditorCLI.h"
+#include <stdexcept>
+#include "common.h"
+#include <string>
+
+TextEditor::TextEditor(const int rowNum, const int rowLength, const char* pathToDll)
 {
-	buffer = new Buffer(rowNum, rowLength);
+    std::string dllPath = std::string(pathToDll);
+   // caesarCipher = new CaesarCipher(dllPath);
+    try
+    {
+        buffer = new Buffer(rowNum, rowLength);
+        caesarCipher = new CaesarCipher(dllPath);
+    }
+    catch (const std::runtime_error& e)
+    {
+        if (buffer != nullptr)
+        {
+            delete buffer;
+        }
+        throw e;
+    }
 }
 
 TextEditor::~TextEditor()
 {
 	CloseFile(filePtr);
+    delete caesarCipher;
     filePtr = nullptr;
 	delete buffer;
 }
@@ -20,7 +40,7 @@ TextEditor::~TextEditor()
 void TextEditor::ExecuteCommand(enum Mode command, bool* ifContinue)
 {
 	char* input = nullptr;
-	int inputSize = buffer->GetRowSize() + 1;
+	size_t inputSize = buffer->GetRowSize() + 1;
 
 	try
 	{
@@ -85,11 +105,12 @@ void TextEditor::ExecuteCommand(enum Mode command, bool* ifContinue)
 	case PASTE:
 		HandlePaste();
 		break;
-
-	case CLS:
-		system("cls");
-		break;
-
+    case ENCRYPT:
+        HandleCaesarTxtAction(input, inputSize, true);
+        break;
+    case DECRYPT:
+        HandleCaesarTxtAction(input, inputSize, false);
+        break;
 	case UNDEFINED:
 		break;
 
@@ -113,7 +134,7 @@ void TextEditor::HandleUserExit(char* input)
 	exit(0);
 }
 
-int TextEditor::HandleAppend(char* input, int inputSize)
+int TextEditor::HandleAppend(char* input, size_t inputSize)
 {
 	fgets(input, inputSize, stdin);
 	if (!IsInputSizeValid(input, inputSize))
@@ -149,7 +170,7 @@ int TextEditor::HandleNewLine()
 	return -1;
 }
 
-int TextEditor::HandleSaveToFile(char* input, int inputSize)
+int TextEditor::HandleSaveToFile(char* input, size_t inputSize)
 {
 	errno_t err;  // to track the execution of fopen_s()
 	printf("\nEnter the filename: ");
@@ -186,7 +207,7 @@ int TextEditor::HandleSaveToFile(char* input, int inputSize)
 
 }
 
-int TextEditor::HandleLoadFromFile(char* input, int inputSize)
+int TextEditor::HandleLoadFromFile(char* input, size_t inputSize)
 {
 	errno_t err;  // to track the execution of fopen_s() 
 	printf("\nCurrent text will be deleted, 1 - continue, 0 - cancel:\n");
@@ -236,11 +257,11 @@ int TextEditor::HandleLoadFromFile(char* input, int inputSize)
 	}
 }
 
-int TextEditor::HandleInsert(char* input, int inputSize)
+int TextEditor::HandleInsert(char* input, size_t inputSize)
 {
 	Buffer::Cursor curCursor = buffer->GetCurCursor();  // returns a pointer
 
-	printf("String to insert at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	printf("String to insert at %zd|%zd: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, inputSize, stdin);
 	if (!IsInputSizeValid(input, inputSize))
 	{
@@ -261,11 +282,11 @@ int TextEditor::HandleInsert(char* input, int inputSize)
 	return 0;
 }
 
-int TextEditor::HandleInsertReplace(char* input, int inputSize)
+int TextEditor::HandleInsertReplace(char* input, size_t inputSize)
 {
 	Buffer::Cursor curCursor = buffer->GetCurCursor();
 
-	printf("Enter the message to insert at position %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	printf("Enter the message to insert at position %zd|%zd: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, inputSize, stdin);
 	if (!IsInputSizeValid(input, inputSize))
 	{
@@ -314,10 +335,10 @@ int TextEditor::HandleSetCursor()
 
 }
 
-int TextEditor::HandleSearch(char* input, int inputSize)
+int TextEditor::HandleSearch(char* input, size_t inputSize)
 {
 	printf("Enter the substring to look for: ");
-	fgets(input, inputSize, stdin);
+	fgets(input, static_cast<int>(inputSize), stdin);
 	if (!IsInputSizeValid(input, inputSize))
 	{
 		printf(">>failure\n");
@@ -336,7 +357,7 @@ int TextEditor::HandleDelete()
 	Buffer::Cursor curCursor = buffer->GetCurCursor();
 	unsigned int amountOfCharsToDelete = 0;
 
-	printf("Enter amount of symbols to delete at %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	printf("Enter amount of symbols to delete at %zd|%zd: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s(" %u", &amountOfCharsToDelete);
 	while ((getchar()) != '\n');  // to remove '\n' from stdin
 	system("cls");
@@ -357,7 +378,7 @@ int TextEditor::HandleCut()
 	unsigned int amountOfCharsToCut = 0;
 	Buffer::Cursor curCursor = buffer->GetCurCursor();
 
-	printf("Enter amount of symbols to cut from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	printf("Enter amount of symbols to cut from %zd|%zd: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s("%u", &amountOfCharsToCut);
 	while ((getchar()) != '\n');  // to get '\n' out of stdin
 	system("cls");
@@ -376,7 +397,7 @@ int TextEditor::HandleCopy()
 	unsigned int amountOfCharsToCopy = 0;
 	Buffer::Cursor curCursor = buffer->GetCurCursor();
 
-	printf("Enter amount of symbols to copy from %d|%d: ", curCursor.GetRow(), curCursor.GetColumn());
+	printf("Enter amount of symbols to copy from %zd|%zd: ", curCursor.GetRow(), curCursor.GetColumn());
 	scanf_s("%u", &amountOfCharsToCopy);
 	while ((getchar()) != '\n');  // to get '\n' out of stdin
 	system("cls");
@@ -404,13 +425,14 @@ int TextEditor::HandlePaste()
 
 void TextEditor::PrintMainMenu() const
 {
-	int curLength = buffer->GetCurRowRemainLength();
+	size_t curLength = buffer->GetCurRowRemainLength();
 	printf("________________________________\n");
-	printf("Row space left is %d symbols\nEnter a digit (your command):\n0 - exit,\t1 - append,\t2 - newline,\t"
+	printf("Row space left is %zd symbols\nEnter a digit (your command):\n0 - exit,\t1 - append,\t2 - newline,\t"
 		"3 - save to a file,\t4 - load from file,\t5 - print current,\n6 - insert,\t7 - insert & replace,\t\t"
 		"8 - search,\t\t9 - set cursor pos,\t10 - delete,\n"
-		"11 - undo,\t12 - redo,\t13 - cut,\t14 - copy,\t\t15 - paste;\t\t16 - clean screen\n", curLength);
+		"11 - undo,\t12 - redo,\t13 - cut,\t14 - copy,\t\t15 - paste;\t\t16 - Encrypt\n", curLength);
 }
+
 
 void TextEditor::CloseFile(FILE* filePtr)
 {
@@ -420,13 +442,79 @@ void TextEditor::CloseFile(FILE* filePtr)
     filePtr = nullptr;
 }
 
+int TextEditor::HandleCaesarTxtAction(char* input, size_t inputSize, bool ifEncrypt)
+{
+    int key = 0;
+    printf("Enter the filepath for FROM file: ");
+    fgets(input, inputSize, stdin);
+    if (!IsInputSizeValid(input, inputSize))
+    {
+        system("cls");
+        printf(">>failure\n");
+        return -1;
+    }
+    RemoveEndNewLine(input);
+
+    std::string fromPath = std::string(input);
+
+    printf("Enter the filepath for OUT file: ");
+    fgets(input, inputSize, stdin);
+    if (!IsInputSizeValid(input, inputSize))
+    {
+        system("cls");
+        printf(">>failure\n");
+        return -1;
+    }
+    RemoveEndNewLine(input);
+
+    std::string toPath = std::string(input);
+    printf("Enter the key: ");
+    scanf_s(" %d", &key);
+    while ((getchar()) != '\n');  // to remove '\n' from stdin
+    if (!caesarCipher->ifKeyValid(key))
+    {
+        system("cls");
+        printf(">>failure\n");
+        return -1;
+    }
+    
+    switch(ifEncrypt)
+    {
+    case true:
+        if (caesarCipher->EncryptTxt(key, fromPath, toPath) == 0)
+        {
+            system("cls");
+            printf(">>success");
+            return 0;
+        }
+        break;
+    case false:
+        if (caesarCipher->DecryptTxt(key, fromPath, toPath) == 0)
+        {
+            system("cls");
+            printf(">>success");
+            return 0;
+        }
+        break;
+    }
+    system("cls");
+    printf(">>failure\n");
+    return -1;
+ 
+}
+
 
 //
 // BUFFFER LOGIC 
 //				 
 
-TextEditor::Buffer::Buffer(const int defaultRowNum, const int defaultRowLength)  // constructor
+TextEditor::Buffer::Buffer(const size_t defaultRowNum, const size_t defaultRowLength)  // constructor
 {
+    if (defaultRowNum < 1 || defaultRowLength < 1)
+    {
+        throw std::runtime_error("(Exception at buffer constructor) Number of rows or row length is too small(must be >0)\n");
+    }
+
     curCursor = new Cursor(0, 0);
     this->defaultRowNum = defaultRowNum;
     this->defaultRowLength = defaultRowLength;
@@ -450,28 +538,28 @@ TextEditor::Buffer::~Buffer()  // destructor
     text = nullptr;
 }
 
-TextEditor::Buffer::Cursor::Cursor(int row, int column)
+TextEditor::Buffer::Cursor::Cursor(size_t row, size_t column)
 {
     this->row = row;
     this->column = column;
 }
 
-void TextEditor::Buffer::Cursor::SetRow(int row)
+void TextEditor::Buffer::Cursor::SetRow(size_t row)
 {
     this->row = row;
 }
 
-void TextEditor::Buffer::Cursor::SetColumn(int column)
+void TextEditor::Buffer::Cursor::SetColumn(size_t column)
 {
     this->column = column;
 }
 
-int TextEditor::Buffer::Cursor::GetRow() const
+size_t TextEditor::Buffer::Cursor::GetRow() const
 {
     return row;
 }
 
-int TextEditor::Buffer::Cursor::GetColumn() const
+size_t TextEditor::Buffer::Cursor::GetColumn() const
 {
     return column;
 }
@@ -513,7 +601,7 @@ int TextEditor::Buffer::InitializeBuffer()
 
 int TextEditor::Buffer::Append(char* input) // update cursor with the values of the end of the buffer 
 {
-    int curRow = totalRowCounter;
+    size_t curRow = totalRowCounter;
 
     if (GetCurRowRemainLength() > (int)strlen(input))
     {
@@ -540,8 +628,8 @@ int TextEditor::Buffer::AddRow()
         return -1;
     }
 
-    int curRow = curCursor->GetRow();
-    int curColumn = curCursor->GetColumn();
+    size_t curRow = curCursor->GetRow();
+    size_t curColumn = curCursor->GetColumn();
 
     if (curRow >= defaultRowNum - 1 ||
         curRow < 0 ||
@@ -579,7 +667,7 @@ int TextEditor::Buffer::AddRow()
         }
         text[totalRowCounter][0] = '\0';
 
-        for (int rowIndex = totalRowCounter - 1; rowIndex > curRow; rowIndex--)
+        for (size_t rowIndex = totalRowCounter - 1; rowIndex > curRow; rowIndex--)
         {
             strcpy_s(addBuffer, defaultRowLength, text[rowIndex]);
             strcpy_s(text[rowIndex + 1], defaultRowLength, addBuffer);
@@ -605,7 +693,7 @@ int TextEditor::Buffer::AddRow()
     if (curColumn < strlen(text[curRow]))   // need to move text to another row
     {
         addBuffer[0] = '\0';
-        for (int columnIndex = curColumn; columnIndex < strlen(text[curRow]); columnIndex++)
+        for (size_t columnIndex = curColumn; columnIndex < strlen(text[curRow]); columnIndex++)
         {
             char curSymbol = text[curRow][columnIndex];
             strncat_s(addBuffer, defaultRowLength, &curSymbol, 1);
@@ -627,7 +715,7 @@ int TextEditor::Buffer::SaveToFile(FILE* filePtr)
     {
         return -1;
     }
-    int textSize = sizeof(char) * defaultRowLength * defaultRowNum + defaultRowNum;  // +defaultRowNum is for '\n'
+    size_t textSize = sizeof(char) * defaultRowLength * defaultRowNum + defaultRowNum;  // +defaultRowNum is for '\n'
     char* textToSave = nullptr;
     try
     {
@@ -765,8 +853,8 @@ void TextEditor::Buffer::PrintCurrent()
 
 int TextEditor::Buffer::InsertAtCursorPos(char* input)
 {
-    int row = curCursor->GetRow();
-    int column = curCursor->GetColumn();
+    size_t row = curCursor->GetRow();
+    size_t column = curCursor->GetColumn();
 
     if (column >= defaultRowLength)   // this might be unnecessary
     {
@@ -774,9 +862,9 @@ int TextEditor::Buffer::InsertAtCursorPos(char* input)
         return -1;
     }
 
-    int rowTextLength = strlen(text[row]);  // on this index there is '\0'
-    int insertTextLength = strlen(input);
-    int curRowMaxSize = defaultRowLength;
+    size_t rowTextLength = strlen(text[row]);  // on this index there is '\0'
+    size_t insertTextLength = strlen(input);
+    size_t curRowMaxSize = defaultRowLength;
 
     if ((insertTextLength + rowTextLength) >= defaultRowLength)
     {
@@ -787,7 +875,7 @@ int TextEditor::Buffer::InsertAtCursorPos(char* input)
     if ((rowTextLength + 1) < column)  // add spaces
     {
 
-        for (int colIndex = rowTextLength; colIndex < column - 1; colIndex++)
+        for (size_t colIndex = rowTextLength; colIndex < column - 1; colIndex++)
             text[row][colIndex] = ' ';
 
         text[row][column - 1] = '\0';
@@ -799,7 +887,7 @@ int TextEditor::Buffer::InsertAtCursorPos(char* input)
         char* addBuffer = new char[curRowMaxSize];
         addBuffer[0] = '\0';
         char ch = '0';
-        for (int colIndex = column; colIndex < rowTextLength; colIndex++)
+        for (size_t colIndex = column; colIndex < rowTextLength; colIndex++)
         {
             ch = text[row][colIndex];
             strncat_s(addBuffer, curRowMaxSize, &ch, 1);  // one symbol at a time
@@ -822,16 +910,16 @@ int TextEditor::Buffer::InsertAtCursorPos(char* input)
 
 int TextEditor::Buffer::InsertReplaceAtCursorPos(char* input)
 {
-    int row = curCursor->GetRow();
-    int column = curCursor->GetColumn();
+    size_t row = curCursor->GetRow();
+    size_t column = curCursor->GetColumn();
 
     if (column >= defaultRowLength)   // this might be unnecessary
     {
         printf(">>Not enough space (might use newline first)\n");
         return -1;
     }
-    int rowTextLength = strlen(text[row]);  // on this index there is '\0'
-    int insertTextLength = strlen(input);
+    size_t rowTextLength = strlen(text[row]);  // on this index there is '\0'
+    size_t insertTextLength = strlen(input);
 
 
     if (column + insertTextLength >= defaultRowLength)  // got to check the edge case
@@ -839,7 +927,7 @@ int TextEditor::Buffer::InsertReplaceAtCursorPos(char* input)
         printf(">>Not enough space (might use newline first)\n");
         return -1;
     }
-    for (int columnIndex = column; columnIndex < column + insertTextLength; columnIndex++)
+    for (size_t columnIndex = column; columnIndex < column + insertTextLength; columnIndex++)
     {
         char curChar = input[columnIndex - column];
         text[row][columnIndex] = curChar;
@@ -879,9 +967,9 @@ void TextEditor::Buffer::SearchSubstrPos(char* subString)
 
 int TextEditor::Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bool ifSaveToBuffer)
 {
-    int   row = curCursor->GetRow();
-    int   column = curCursor->GetColumn();
-    char* addBuffer = nullptr;
+    size_t row = curCursor->GetRow();
+    size_t column = curCursor->GetColumn();
+    char*  addBuffer = nullptr;
 
     if (column + amountOfCharsToDelete >= defaultRowLength)
     {
@@ -900,7 +988,7 @@ int TextEditor::Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bo
 
     if (column + amountOfCharsToDelete < strlen(text[row]))  // cut out the deleted symbols
     {
-        for (unsigned int columnIndex = column + amountOfCharsToDelete; columnIndex < strlen(text[row]); columnIndex++)
+        for (size_t columnIndex = column + amountOfCharsToDelete; columnIndex < strlen(text[row]); columnIndex++)
         {
             char curChar = text[row][columnIndex];
             strncat_s(addBuffer, defaultRowLength, &curChar, 1);
@@ -908,7 +996,7 @@ int TextEditor::Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bo
         if (ifSaveToBuffer)  // if it is cut mode
         {
             pasteBuffer[0] = '\0';
-            for (unsigned int columnIndex = column; columnIndex < column + amountOfCharsToDelete; columnIndex++)
+            for (size_t columnIndex = column; columnIndex < column + amountOfCharsToDelete; columnIndex++)
             {
                 char curChar = text[row][columnIndex];
                 strncat_s(pasteBuffer, defaultRowLength, &curChar, 1);
@@ -922,7 +1010,7 @@ int TextEditor::Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bo
         if (ifSaveToBuffer)
         {
             pasteBuffer[0] = '\0';
-            for (unsigned int columnIndex = column; columnIndex < strlen(text[row]); columnIndex++)
+            for (size_t columnIndex = column; columnIndex < strlen(text[row]); columnIndex++)
             {
                 char curChar = text[row][columnIndex];
                 strncat_s(pasteBuffer, defaultRowLength, &curChar, 1);
@@ -938,8 +1026,8 @@ int TextEditor::Buffer::DeleteAtCursorPos(unsigned int amountOfCharsToDelete, bo
 
 int TextEditor::Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
 {
-    int row = curCursor->GetRow();
-    int column = curCursor->GetColumn();
+    size_t row = curCursor->GetRow();
+    size_t column = curCursor->GetColumn();
 
     if (column + amountOfCharsToCopy >= defaultRowLength)
     {
@@ -949,7 +1037,7 @@ int TextEditor::Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
     pasteBuffer[0] = '\0';
     if (column + amountOfCharsToCopy < strlen(text[row]))
     {
-        for (unsigned int columnIndex = column; columnIndex < column + amountOfCharsToCopy; columnIndex++)
+        for (size_t columnIndex = column; columnIndex < column + amountOfCharsToCopy; columnIndex++)
         {
             char curChar = text[row][columnIndex];
             strncat_s(pasteBuffer, defaultRowLength, &curChar, 1);  // check edge case
@@ -957,7 +1045,7 @@ int TextEditor::Buffer::CopyAtCursorPos(unsigned int amountOfCharsToCopy)
     }
     else
     {
-        for (unsigned int columnIndex = column; columnIndex < strlen(text[row]); columnIndex++)
+        for (size_t columnIndex = column; columnIndex < strlen(text[row]); columnIndex++)
         {
             char curChar = text[row][columnIndex];
             strncat_s(pasteBuffer, defaultRowLength, &curChar, 1);  // check edge case
@@ -995,9 +1083,10 @@ void TextEditor::Buffer::FlushText()
     totalRowCounter = 0;
 }
 
-int TextEditor::Buffer::SetCursorPosition(int row, int column)
+int TextEditor::Buffer::SetCursorPosition(size_t row, size_t column)
 {
-    if (row < 0 || row > totalRowCounter || column < 0 || column > strlen(text[row]))
+    if (row    > totalRowCounter || 
+        column > strlen(text[row]))
     {
         return -1;
     }
@@ -1007,16 +1096,16 @@ int TextEditor::Buffer::SetCursorPosition(int row, int column)
     return 0;
 }
 
-int TextEditor::Buffer::GetCurRowRemainLength()  // returns remaining size of the current row
+size_t TextEditor::Buffer::GetCurRowRemainLength()  // returns remaining size of the current row
 {
-    int remainLength = defaultRowLength;  // by default
-    int curRow = curCursor->GetRow();
-    int curColumn = curCursor->GetColumn();
+    size_t remainLength = defaultRowLength;  // by default
+    size_t curRow = curCursor->GetRow();
+    size_t curColumn = curCursor->GetColumn();
 
     if (text[curRow] != nullptr)
         remainLength = remainLength - strlen(text[curRow]) - 1;  // -1 to keep '\0'
 
-    if (remainLength < 0)
+    if (remainLength == 0 || remainLength > defaultRowLength)  // to prevent overflow of size_t type
         return 0;
 
     return remainLength;
@@ -1034,7 +1123,7 @@ int TextEditor::Buffer::GetTxtSize(FILE* filePtr)
     return fileSize;
 }
 
-int TextEditor::Buffer::GetRowSize()
+size_t TextEditor::Buffer::GetRowSize() const
 {
     return defaultRowLength;
 }
@@ -1051,4 +1140,3 @@ void TextEditor::Buffer::CloseFile(FILE* filePtr)
 
     filePtr = nullptr;
 }
-

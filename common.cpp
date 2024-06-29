@@ -28,7 +28,7 @@ void AllocFailureProgTermination(FILE* filePtr, TextEditor* textEditorInstance)
 
 int RemoveEndNewLine(char* string)
 {
-	int lenght = strlen(string);
+	size_t lenght = strlen(string);
 	if (lenght > 0)
 	{
 		if (string[lenght - 1] == '\n')
@@ -40,7 +40,7 @@ int RemoveEndNewLine(char* string)
 	return -1;
 }
 
-bool IsInputSizeValid(char* input, int inputSize)
+bool IsInputSizeValid(char* input, size_t inputSize)
 {
 	if (inputSize > 0 && inputSize == strlen(input) + 1)
 	{

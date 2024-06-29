@@ -11,7 +11,7 @@
 //#include "common.h"
 //#include "CaesarCipher.h"
 #include "TextEditorCLI.h"
-using namespace std;
+//using namespace std;
 
 FILE* filePtr = nullptr;
 HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -60,7 +60,9 @@ int main()
 	SetConsoleTextAttribute(hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
 	system("cls");
 
-	TextEditor* textEditor = new TextEditor(150, 150);
+	TextEditor* textEditor = new TextEditor(150, 150, "caesarDLL");
+	CaesarCipher* caesarCipher = new CaesarCipher("hello");
+	delete caesarCipher;
 	bool ifContinue = true;
 	
 	while (ifContinue)
@@ -749,8 +751,10 @@ enum Mode GetUserCommand(TextEditor* textEditor)
 			command = PASTE;
 			break;
 		case '6':
-			command = CLS;
+			command = ENCRYPT;
 			break;
+		case '7':
+			command = DECRYPT;
 		default:
 			command = UNDEFINED;
 			printf(">>The command is not implemmented\n");

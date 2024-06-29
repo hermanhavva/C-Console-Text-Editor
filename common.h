@@ -8,7 +8,7 @@
 void AllocFailureProgTermination(FILE* filePtr, TextEditor::Buffer* bufferInstance);
 void AllocFailureProgTermination(FILE* filePtr, TextEditor* textEditorInstance);
 int  RemoveEndNewLine(char*);
-bool IsInputSizeValid(char* input, int inputSize);
+bool IsInputSizeValid(char* input, size_t inputSize);
 
 
 #endif // !_AUXILIARY_FUNCTIONS_
