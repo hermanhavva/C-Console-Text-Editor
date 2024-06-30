@@ -1,5 +1,5 @@
 # C++ Console-Text-Editor
-Simple console application on C++ which enables writing, editing, loading, reading from txt.  
+Console application on C++ which enables writing, editing, loading, reading from txt.  
 
 # 🎯 Supported commands
 1. **Append** - appends to the end of the file
