@@ -1,0 +1,24 @@
+#pragma once
+
+enum Mode
+{
+	USEREXIT = 0,
+	APPEND = 1,
+	NEWLINE = 2,
+	SAVETOFILE = 3,
+	LOADFROMFILE = 4,
+	PRINTCURRENT = 5,
+	INSERT = 6,
+	INSERTREPLACE = 7,
+	SEARCH = 8,
+	SETCURSOR = 9,
+	DELETESTR = 10,
+	UNDO = 11,
+	REDO = 12,
+	CUT = 13,
+	COPY = 14,
+	PASTE = 15,
+	CIPHEER = 16,
+	DECRYPT = 17,
+	UNDEFINED
+};

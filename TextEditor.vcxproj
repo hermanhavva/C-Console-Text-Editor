@@ -131,11 +131,17 @@
     <ClCompile Include="CaesarCipher.cpp" />
     <ClCompile Include="common.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="TextEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="CaesarCipher.h" />
+    <ClInclude Include="CommandEnum.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="TextEditor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
