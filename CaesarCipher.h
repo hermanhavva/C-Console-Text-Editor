@@ -1,10 +1,8 @@
-#ifndef _CAESAR_CIPHER_H
+#ifndef _CAESAR_CIPHER_H_
 #define _CAESAR_CIPHER_H_
 
 #include <windows.h>
 #include <string>
-
-//using namespace std;
 
 class CaesarCipher
 {

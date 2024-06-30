@@ -5,26 +5,24 @@
 
 #include <stdio.h>
 
-/*
-
 class Buffer
 {
 public:
     class Cursor
     {
     public:
-        Cursor(int, int);
-        void SetRow(int);
-        void SetColumn(int);
-        int GetRow() const;
-        int GetColumn() const;
+        Cursor(size_t, size_t);
+        void SetRow(size_t);
+        void SetColumn(size_t);
+        size_t GetRow() const;
+        size_t GetColumn() const;
 
     private:
-        int row, column;
+        size_t row, column;
     };
 
-    Buffer();  // constructor
-    ~Buffer();  // destructor 
+    Buffer(const size_t, const size_t);  // constructor
+    ~Buffer();  // destructor
     int  Append(char*);
     int  AddRow();
     int  SaveToFile(FILE*);
@@ -36,28 +34,26 @@ public:
     int  DeleteAtCursorPos(unsigned int, bool);
     int  CopyAtCursorPos(unsigned int);
     int  PasteAtCursorPos();
-    int  SetCursorPosition(int, int);
+    int  SetCursorPosition(size_t, size_t);
     int  MoveCursorToEnd();
-    int  GetCurRowRemainLength();
+    size_t GetCurRowRemainLength();
     void FlushText();  // sets the buffer to initial state
-    int  GetRowSize();
-    void AllocFailureProgTermination(FILE*);
-    void CloseFile(FILE*);
+    size_t  GetRowSize() const;
     Buffer::Cursor GetCurCursor();
+    void CloseFile(FILE*);
 
 private:
-    const int defaultRowNum = 256;  // will scale this baby up (no)
-    const int defaultRowLength = 100;
+    size_t defaultRowNum = 0;
+    size_t defaultRowLength = 0;
 
-    int     totalRowCounter = -1;
+    size_t  totalRowCounter = 0;
     Cursor* curCursor = nullptr;
     char** text = nullptr;
     char* pasteBuffer = nullptr;
 
-
     int InitializeBuffer();
     int GetTxtSize(FILE*);
 };
-*/
+
 #endif  // !_BUFFER_CLASS_H_
 

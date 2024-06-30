@@ -47,11 +47,11 @@ int CaesarCipher::EncryptTxt(const int key, std::string fromPath, std::string to
 
 	std::ifstream fileFrom;
 	std::fstream fileTo;
-	fileFrom.open(fromPath, std::ios::binary);
 
-	fileTo.open(toPath);
+	fileFrom.open(fromPath, std::ios::binary);
+	fileTo.open(toPath, std::ios::out | std::ios::trunc);
 	
-	if(!fileTo.is_open())
+	if(!fileTo.is_open() || !fileFrom.is_open())
 	{
 		printf("Could not open the file\n");
 		return -1;

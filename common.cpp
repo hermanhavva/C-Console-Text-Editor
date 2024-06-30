@@ -1,26 +1,15 @@
 //#pragma once
 
-//#include "Buffer.h"
+#include "Buffer.h"
 #include "windows.h"
-#include <string>
 #include "common.h"
-//#include <stdio.h>
+//#include <stdio.h> 
 
-void AllocFailureProgTermination(FILE* filePtr, TextEditor::Buffer* bufferInstance)
+void AllocFailureProgTermination(FILE* filePtr, Buffer* bufferInstance)
 {
 	perror("Error allocating memory");
 	bufferInstance->CloseFile(filePtr);
 	delete bufferInstance;
-
-	Sleep(1000);
-	exit(EXIT_FAILURE);
-}
-
-void AllocFailureProgTermination(FILE* filePtr, TextEditor* textEditorInstance)
-{
-	perror("Error allocating memory");
-	textEditorInstance->CloseFile(filePtr);
-	delete textEditorInstance;
 
 	Sleep(1000);
 	exit(EXIT_FAILURE);

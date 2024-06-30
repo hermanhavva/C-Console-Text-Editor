@@ -27,7 +27,7 @@
     <ClCompile Include="CaesarCipher.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="TextEditorCLI.cpp">
+    <ClCompile Include="TextEditor.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,7 +41,7 @@
     <ClInclude Include="CaesarCipher.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="TextEditorCLI.h">
+    <ClInclude Include="TextEditor.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="CommandEnum.h">
