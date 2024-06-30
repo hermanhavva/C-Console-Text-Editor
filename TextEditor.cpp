@@ -57,39 +57,30 @@ void TextEditor::ExecuteCommand(enum Mode command, bool* ifContinue)
 		*ifContinue = false;
 		HandleUserExit(input);
 		break;
-
 	case APPEND:
 		HandleAppend(input, inputSize);
 		break;
-
 	case NEWLINE:
 		HandleNewLine();
 		break;
-
 	case SAVETOFILE:
 		HandleSaveToFile(input, inputSize);
 		break;
-
 	case LOADFROMFILE:
 		HandleLoadFromFile(input, inputSize);  // problem reading the file
 		break;
-
 	case PRINTCURRENT:
 		buffer->PrintCurrent();
 		break;
-
 	case INSERT:
 		HandleInsert(input, inputSize);
 		break;
-
 	case INSERTREPLACE:
 		HandleInsertReplace(input, inputSize);
 		break;
-
 	case SETCURSOR:
 		HandleSetCursor();
 		break;
-
 	case SEARCH:
 		HandleSearch(input, inputSize);
 		break;
@@ -105,11 +96,8 @@ void TextEditor::ExecuteCommand(enum Mode command, bool* ifContinue)
 	case PASTE:
 		HandlePaste();
 		break;
-    case ENCRYPT:
-        HandleCaesarTxtAction(input, inputSize, true);
-        break;
-    case DECRYPT:
-        HandleCaesarTxtAction(input, inputSize, false);
+    case CIPHEER:
+        HandleCipherTxtAction(input, inputSize);
         break;
 	case UNDEFINED:
 		break;
@@ -432,7 +420,7 @@ void TextEditor::PrintMainMenu() const
 	printf("Row space left is %zd symbols\nEnter a digit (your command):\n0 - exit,\t1 - append,\t2 - newline,\t"
 		"3 - save to a file,\t4 - load from file,\t5 - print current,\n6 - insert,\t7 - insert & replace,\t\t"
 		"8 - search,\t\t9 - set cursor pos,\t10 - delete,\n"
-		"11 - undo,\t12 - redo,\t13 - cut,\t14 - copy,\t\t15 - paste;\t\t16 - Encrypt\n", curLength);
+		"11 - undo,\t12 - redo,\t13 - cut,\t14 - copy,\t\t15 - paste;\t\t16 - Cipher txt\n", curLength);
 }
 
 void TextEditor::CloseFile(FILE* filePtr)
@@ -443,9 +431,11 @@ void TextEditor::CloseFile(FILE* filePtr)
     filePtr = nullptr;
 }
 
-int TextEditor::HandleCaesarTxtAction(char* input, size_t inputSize, bool ifEncrypt)
+int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
 {
-    int key = 0;
+    int	 key = 0;
+	char ifEncrypt;
+
     printf("Enter the filepath for FROM file: ");
     fgets(input, static_cast<int>(inputSize), stdin);
     if (!IsInputSizeValid(input, inputSize))
@@ -475,25 +465,35 @@ int TextEditor::HandleCaesarTxtAction(char* input, size_t inputSize, bool ifEncr
     if (!caesarCipher->ifKeyValid(key))
     {
         system("cls");
-        printf(">>failure\n");
+        printf(">>failure, wrong key\n");
         return -1;
     }
+
+	printf("1 - Encrypt, 0 - Decrypt: ");
+	scanf_s(" %c", &ifEncrypt);
+	while ((getchar()) != '\n');  // to remove '\n' from stdin
+	if (ifEncrypt != '0' && ifEncrypt != '1')
+	{
+		system("cls");
+		printf(">>failure, wrong number\n");
+		return -1;
+	}
     
     switch(ifEncrypt)
     {
-    case true:
+    case '1':
         if (caesarCipher->EncryptTxt(key, fromPath, toPath) == 0)
         {
             system("cls");
-            printf(">>success");
+            printf(">>success\n");
             return 0;
         }
         break;
-    case false:
+    case '0':
         if (caesarCipher->DecryptTxt(key, fromPath, toPath) == 0)
         {
             system("cls");
-            printf(">>success");
+            printf(">>success\n");
             return 0;
         }
         break;

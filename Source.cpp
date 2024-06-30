@@ -148,10 +148,8 @@ enum Mode GetUserCommand(TextEditor* textEditor)
 			command = PASTE;
 			break;
 		case '6':
-			command = ENCRYPT;
+			command = CIPHEER;
 			break;
-		case '7':
-			command = DECRYPT;
 		default:
 			command = UNDEFINED;
 			printf(">>The command is not implemmented\n");

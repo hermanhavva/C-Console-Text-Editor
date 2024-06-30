@@ -18,7 +18,7 @@ enum Mode
 	CUT = 13,
 	COPY = 14,
 	PASTE = 15,
-	ENCRYPT = 16,
+	CIPHEER = 16,
 	DECRYPT = 17,
 	UNDEFINED
 };

@@ -30,7 +30,7 @@ private:
     int HandleDelete();
     int HandleCut();
     int HandleCopy();
-    int HandleCaesarTxtAction(char* input, size_t inputSize, bool ifEncrypt);
+    int HandleCipherTxtAction(char* input, size_t inputSize);
     
 
     int HandlePaste();
