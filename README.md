@@ -13,12 +13,15 @@ Simple console application on C++ which enables writing, editing, loading, readi
 9. **Set Cursor Position** - sets cursor at specified row column 
 10. **Delete specified number of symbols** from current cursor position
 11. **Cut/Copy/Paste** (if buffer is empty it pastes an empty str)
+12. **Cipher txt** enables you to Encrypt/Decrypt an existing `.txt` 
     
 # 📁 Repo structure and source files
-1. `Buffer class.h` features the functionality of buffer which powers the program, it is dependent on `Cursor class.h` and `Auxiliary functions.h`.
-2. `Cursor class.h` simple class for managing a `Cursor` object which has `Row` and `Column` fields.
-3. `Auxiliary functions.h` is a header file with functions which are not clasified to direct functionality, but still important.
-4. `Source.cpp` is a main file, it gets the command from user, and passes on the execution to headers files
+1. `Buffer.h` features the functionality of buffer which powers the program, it is dependent on `Cursor` inner class and `Common.h`.
+2. `Cursor` simple class for managing an object which has `size_t` `Row` and `Column` fields.
+3. `Common.h` is a header file with functions which are not clasified to direct functionality, but still important.
+4. `TextEditor.h` is a header which features the `TextEditor` class the main idea of which is to encapsulate the process of handling the user input calling corresponding functions from `Buffer.h`, `CaesarCipher.h`, etc
+5. `CaesarCipher.h` is a header file which is responsible for Encrypting and Decrypting logic, it has some methods which are not used in this project 
+6. `Source.cpp` is a main file, it gets the command from user, and passes on the execution to headers files
 
 # 👨‍💻 Interface example
 ### Main Menu:
