@@ -44,6 +44,10 @@ int CaesarCipher::EncryptTxt(const int key, std::string fromPath, std::string to
 	{
 		throw std::runtime_error(std::string("The key is too large must be -26<key<26\n"));
 	}
+	if (fromPath == toPath)
+	{
+		throw std::runtime_error(std::string("The From path and Out path maust be different\n"));
+	}
 
 	std::ifstream fileFrom;
 	std::fstream fileTo;
@@ -95,14 +99,18 @@ int CaesarCipher::DecryptTxt(const int key, std::string fromPath, std::string to
 	{
 		throw std::runtime_error(std::string("The key is too large must be -26<key<26\n"));
 	}
+	if (fromPath == toPath)
+	{
+		throw std::runtime_error(std::string("The From path and Out path maust be different\n"));
+	}
 
 	std::ifstream fileFrom;
 	std::fstream fileTo;
 
 	fileFrom.open(fromPath, std::ios::binary);
-	fileTo.open(toPath);
+	fileTo.open(toPath, std::ios::out | std::ios::trunc);
 
-	if (!fileTo.is_open())
+	if (!fileTo.is_open() || !fileFrom.is_open())
 	{
 		printf("Could not open the file\n");
 		return -1;

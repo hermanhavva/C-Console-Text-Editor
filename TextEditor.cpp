@@ -19,13 +19,13 @@ TextEditor::TextEditor(const size_t rowNum, const size_t rowLength, const char* 
         buffer = new Buffer(rowNum, rowLength);
         caesarCipher = new CaesarCipher(dllPath);
     }
-    catch (const std::runtime_error& e)
+    catch (const std::runtime_error& er)
     {
         if (buffer != nullptr)
         {
             delete buffer;
         }
-        throw e;
+		printf(er.what());
     }
 }
 
@@ -470,7 +470,7 @@ int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
     }
 
 	printf("1 - Encrypt, 0 - Decrypt: ");
-	scanf_s(" %c", &ifEncrypt);
+	scanf_s(" %c", &ifEncrypt, 1);
 	while ((getchar()) != '\n');  // to remove '\n' from stdin
 	if (ifEncrypt != '0' && ifEncrypt != '1')
 	{
@@ -478,27 +478,38 @@ int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
 		printf(">>failure, wrong number\n");
 		return -1;
 	}
+	if (fromPath == toPath)
+	{
+		printf(">>failure, the paths must be differnt\n");
+		return -1;
+	}
+	try
+	{
+		switch (ifEncrypt)
+		{
+		case '1':
+			if (caesarCipher->EncryptTxt(key, fromPath, toPath) == 0)
+			{
+				system("cls");
+				printf(">>success\n");
+				return 0;
+			}
+			break;
+		case '0':
+			if (caesarCipher->DecryptTxt(key, fromPath, toPath) == 0)
+			{
+				system("cls");
+				printf(">>success\n");
+				return 0;
+			}
+			break;
+		}
+	}
+	catch (const std::runtime_error& er)
+	{
+		printf(er.what());
+	}
     
-    switch(ifEncrypt)
-    {
-    case '1':
-        if (caesarCipher->EncryptTxt(key, fromPath, toPath) == 0)
-        {
-            system("cls");
-            printf(">>success\n");
-            return 0;
-        }
-        break;
-    case '0':
-        if (caesarCipher->DecryptTxt(key, fromPath, toPath) == 0)
-        {
-            system("cls");
-            printf(">>success\n");
-            return 0;
-        }
-        break;
-    }
-    system("cls");
     printf(">>failure\n");
     return -1;
  
