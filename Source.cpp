@@ -28,14 +28,8 @@ int main()
 	system("cls");
 	
 	TextEditor* textEditor = nullptr;
-	try
-	{
-		textEditor = new TextEditor(150, 150, "caesarDLL");  
-	}
-	catch (const std::runtime_error e)
-	{
-		printf(e.what());
-	}
+
+	textEditor = new TextEditor(150, 150, "caesarDLL");  
 	
 	bool ifContinue = true;
 	
