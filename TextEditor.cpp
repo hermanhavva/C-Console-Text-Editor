@@ -1,8 +1,5 @@
-
-//#include "Buffer.h"
 #include <windows.h>
 #include <new>
-
 #include "CommandEnum.h"
 #include "CaesarCipher.h"
 #include "TextEditor.h"
@@ -24,8 +21,8 @@ TextEditor::TextEditor(const size_t rowNum, const size_t rowLength, const char* 
         if (buffer != nullptr)
         {
             delete buffer;
-        }
-		printf(er.what());
+        } 
+		printf(er.what());  // TO DO: add an if which would ensure that the program runs without dll 
     }
 }
 
@@ -514,9 +511,5 @@ int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
     return -1;
  
 }
-
-
-//
-// BUFFFER LOGIC 
-//				 
+		 
 

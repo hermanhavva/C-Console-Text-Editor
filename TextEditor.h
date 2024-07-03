@@ -1,6 +1,6 @@
-
 #ifndef _TEXT_EDITOR_CLI_H_
 #define _TEXT_EDITOR_CLI_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "CaesarCipher.h"

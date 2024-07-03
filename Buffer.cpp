@@ -12,7 +12,7 @@ Buffer::Buffer(const size_t defaultRowNum, const size_t defaultRowLength)  // co
     {
         throw std::runtime_error("(Exception at buffer constructor) Number of rows or row length is too small(must be >0)\n");
     }
-    if (defaultRowLength > INT_MAX - 100 || defaultRowLength > INT_MAX - 100)
+    if (defaultRowLength > INT_MAX - 100 || defaultRowNum > INT_MAX - 100)
     {
         throw std::runtime_error("(Exception at buffer constructor) Number of rows and/or columns is too big\n");
     }
