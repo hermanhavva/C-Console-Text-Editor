@@ -53,9 +53,16 @@ int CaesarCipher::EncryptTxt(const int key, std::string fromPath, std::string to
 	std::fstream fileTo;
 
 	fileFrom.open(fromPath, std::ios::binary);
-	fileTo.open(toPath, std::ios::out | std::ios::trunc);
 	
-	if(!fileTo.is_open() || !fileFrom.is_open())
+	if(!fileFrom.is_open())
+	{
+		printf("Could not open the file\n");
+		return -1;
+	}
+	
+	fileTo.open(toPath, std::ios::out | std::ios::trunc);
+
+	if (!fileTo.is_open())
 	{
 		printf("Could not open the file\n");
 		return -1;
@@ -108,9 +115,16 @@ int CaesarCipher::DecryptTxt(const int key, std::string fromPath, std::string to
 	std::fstream fileTo;
 
 	fileFrom.open(fromPath, std::ios::binary);
+
+	if (!fileFrom.is_open())
+	{
+		printf("Could not open the file\n");
+		return -1;
+	}
+
 	fileTo.open(toPath, std::ios::out | std::ios::trunc);
 
-	if (!fileTo.is_open() || !fileFrom.is_open())
+	if (!fileTo.is_open())
 	{
 		printf("Could not open the file\n");
 		return -1;

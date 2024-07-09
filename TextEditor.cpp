@@ -10,11 +10,10 @@
 
 TextEditor::TextEditor(const size_t rowNum, const size_t rowLength, const char* pathToDll)
 {
-    std::string dllPath = std::string(pathToDll);
+    this->pathToDll = std::string(pathToDll);
     try
     {
-        buffer = new Buffer(rowNum, rowLength);
-        caesarCipher = new CaesarCipher(dllPath);
+		buffer = new Buffer(rowNum, rowLength);
     }
     catch (const std::runtime_error& er)
     {
@@ -22,7 +21,9 @@ TextEditor::TextEditor(const size_t rowNum, const size_t rowLength, const char* 
         {
             delete buffer;
         } 
-		printf(er.what());  // TO DO: add an if which would ensure that the program runs without dll 
+		printf(er.what());  // TO DO: add an if which would ensure that the program runs without dll
+		Sleep(1000);
+		exit(1);
     }
 }
 
@@ -32,6 +33,7 @@ TextEditor::~TextEditor()
     delete caesarCipher;
     filePtr = nullptr;
 	delete buffer;
+	buffer = nullptr;
 }
 
 void TextEditor::ExecuteCommand(enum Mode command, bool* ifContinue)
@@ -116,6 +118,7 @@ void TextEditor::HandleUserExit(char* input)
 	input = nullptr;
 
 	delete this;
+
 
 	Sleep(100);
 	exit(0);
@@ -432,6 +435,20 @@ int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
 {
     int	 key = 0;
 	char ifEncrypt;
+	if (!ifLibLoaded)
+	{
+		try
+		{
+			caesarCipher = new CaesarCipher(pathToDll);
+		}
+		catch (const std::runtime_error& er)
+		{
+			printf(er.what());
+			return -1;
+		}
+	}
+	
+	ifLibLoaded = true;
 
     printf("Enter the filepath for FROM file: ");
     fgets(input, static_cast<int>(inputSize), stdin);
@@ -512,4 +529,11 @@ int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
  
 }
 		 
-
+std::string TextEditor::GetDllPath()
+{
+	return pathToDll;
+}
+void TextEditor::SetDllPath(std::string pathToDll)
+{
+	this->pathToDll = pathToDll;
+}
