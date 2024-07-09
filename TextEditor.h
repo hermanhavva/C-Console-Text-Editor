@@ -1,10 +1,11 @@
-
 #ifndef _TEXT_EDITOR_CLI_H_
 #define _TEXT_EDITOR_CLI_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "CaesarCipher.h"
 #include "Buffer.h"
+#include "string"
 
 
 class TextEditor
@@ -31,17 +32,15 @@ private:
     int HandleCut();
     int HandleCopy();
     int HandleCipherTxtAction(char* input, size_t inputSize);
-    
-
     int HandlePaste();
-    
+    void SetDllPath(std::string);
+    std::string GetDllPath();
+
+    std::string pathToDll = "";
+    bool ifLibLoaded = false;
     CaesarCipher* caesarCipher = nullptr;
     Buffer* buffer = nullptr;
-    
     FILE* filePtr = nullptr;
-    // common functions
-
-
 };
 
 
