@@ -8,7 +8,7 @@
 void AllocFailureProgTermination(FILE* filePtr, Buffer* bufferInstance);
 //void AllocFailureProgTermination(FILE* filePtr, TextEditor* textEditorInstance);
 int  RemoveEndNewLine(char*);
-bool IsInputSizeValid(char* input, size_t inputSize);
+bool IfInputSizeNotValidClearSTDin(char* input, size_t inputSize);
 
 
 #endif // !_AUXILIARY_FUNCTIONS_

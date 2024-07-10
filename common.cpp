@@ -29,9 +29,9 @@ int RemoveEndNewLine(char* string)
 	return -1;
 }
 
-bool IsInputSizeValid(char* input, size_t inputSize)
+bool IfInputSizeNotValidClearSTDin(char* input, size_t inputSize)
 {
-	if (inputSize > 0 && inputSize == strlen(input) + 1)
+	if (inputSize == strlen(input) + 1)
 	{
 		if (input[strlen(input) - 1] != '\n')
 			while ((getchar()) != '\n');

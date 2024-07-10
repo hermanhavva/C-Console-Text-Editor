@@ -14,7 +14,6 @@ HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 enum Mode;
 BOOL WINAPI ConsoleHandler(DWORD);
-enum Mode GetUserCommand(TextEditor* buffer);
 
 int main()
 {
@@ -29,15 +28,18 @@ int main()
 	
 	TextEditor* textEditor = nullptr;
 
-	textEditor = new TextEditor(150, 150, "caesarDLL");  
+	textEditor = new TextEditor(50, 50, "caesarDLL");  
 	
 	bool ifContinue = true;
 	
 	while (ifContinue)
 	{
 		textEditor->PrintMainMenu();
-		Mode command = GetUserCommand(textEditor);
-		textEditor->ExecuteCommand(command, &ifContinue);
+		Mode command = textEditor->GetUserCommand();
+		if (command != UNDEFINED)
+		{
+			textEditor->ExecuteCommand(command, &ifContinue);
+		}
 	}
 	
 	delete textEditor;
@@ -57,111 +59,5 @@ BOOL WINAPI ConsoleHandler(DWORD signal) {
 		exit(0);
 	}
 	return TRUE;
-}
-
-enum Mode GetUserCommand(TextEditor* textEditor)
-{ 
-	printf("Enter number: ");
-	enum Mode command;
-	char* input = nullptr;
-	const int COMMANDSIZE = 10;
-
-	try
-	{
-		input = new char[COMMANDSIZE];
-	}
-	catch (const std::bad_alloc&)
-	{
-		delete textEditor;
-		AllocFailureProgTermination(nullptr, nullptr);
-	}
-
-	fgets(input, COMMANDSIZE, stdin);
-	RemoveEndNewLine(input);
-
-	if (strlen(input) == 1)
-	{
-		switch (input[0])
-		{
-		case '0':
-			command = USEREXIT;
-			break;
-		case '1':
-			command = APPEND;
-			break;
-		case '2':
-			command = NEWLINE;
-			break;
-		case '3':
-			command = SAVETOFILE;
-			break;
-		case '4':
-			command = LOADFROMFILE;
-			break;
-		case '5':
-			command = PRINTCURRENT;
-			break;
-		case '6':
-			command = INSERT;
-			break;
-		case '7':
-			command = INSERTREPLACE;
-			break;
-		case '8':
-			command = SEARCH;
-			break;
-		case '9':
-			command = SETCURSOR;
-			break;
-		default:
-			printf(">>The command is not implemmented\n");
-			command = UNDEFINED;
-			break;
-		}
-	}
-	else if (strlen(input) == 2 && (int)input[0] >= 48 && (int)input[0] <= 57)
-	{
-		switch (input[1])
-		{
-		case '0':
-			command = DELETESTR;
-			break;
-		case '1':
-			command = UNDO;
-			break;
-		case '2':
-			command = REDO;
-			break;
-		case '3':
-			command = CUT;
-			break;
-		case '4':
-			command = COPY;
-			break;
-		case '5':
-			command = PASTE;
-			break;
-		case '6':
-			command = CIPHEER;
-			break;
-		default:
-			command = UNDEFINED;
-			printf(">>The command is not implemmented\n");
-			break;
-		}
-	}
-	else
-	{
-		printf(">>The command is not implemmented\n");
-		command = UNDEFINED;
-	}
-
-	if (command == UNDEFINED)
-	{
-		while ((getchar()) != '\n');  // to clear the buffer of garbage symbols
-	}
-
-	delete[] input;
-	return command;
 }
 

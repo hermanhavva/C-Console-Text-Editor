@@ -30,10 +30,117 @@ TextEditor::TextEditor(const size_t rowNum, const size_t rowLength, const char* 
 TextEditor::~TextEditor()
 {
 	CloseFile(filePtr);
-    delete caesarCipher;
-    filePtr = nullptr;
+	filePtr = nullptr;
+	delete caesarCipher;
+	caesarCipher = nullptr;
 	delete buffer;
 	buffer = nullptr;
+}
+
+
+enum Mode TextEditor::GetUserCommand()
+{
+	printf("Enter number: ");
+	enum Mode command;
+	char* input = nullptr;
+	const size_t COMMANDSIZE = 10;
+
+	try
+	{
+		input = new char[COMMANDSIZE];
+	}
+	catch (const std::bad_alloc&)
+	{
+		delete this;
+		AllocFailureProgTermination(nullptr, nullptr);
+	}
+
+	fgets(input, COMMANDSIZE, stdin);
+	RemoveEndNewLine(input);
+
+	if (strlen(input) == 1)
+	{
+		switch (input[0])
+		{
+		case '0':
+			command = USEREXIT;
+			break;
+		case '1':
+			command = APPEND;
+			break;
+		case '2':
+			command = NEWLINE;
+			break;
+		case '3':
+			command = SAVETOFILE;
+			break;
+		case '4':
+			command = LOADFROMFILE;
+			break;
+		case '5':
+			command = PRINTCURRENT;
+			break;
+		case '6':
+			command = INSERT;
+			break;
+		case '7':
+			command = INSERTREPLACE;
+			break;
+		case '8':
+			command = SEARCH;
+			break;
+		case '9':
+			command = SETCURSOR;
+			break;
+		default:
+			printf(">>The command is not implemmented\n");
+			command = UNDEFINED;
+			break;
+		}
+	}
+	else if (strlen(input) == 2 && input[0] == '1')
+	{
+		switch (input[1])
+		{
+		case '0':
+			command = DELETESTR;
+			break;
+		case '1':
+			command = UNDO;
+			break;
+		case '2':
+			command = REDO;
+			break;
+		case '3':
+			command = CUT;
+			break;
+		case '4':
+			command = COPY;
+			break;
+		case '5':
+			command = PASTE;
+			break;
+		case '6':
+			command = CIPHEER;
+			break;
+		default:
+			command = UNDEFINED;
+			printf(">>The command is not implemmented\n");
+			break;
+		}
+	}
+	else
+	{
+		printf(">>The command is not implemmented\n");
+		command = UNDEFINED;
+	}
+
+	IfInputSizeNotValidClearSTDin(input, COMMANDSIZE);
+
+	delete[] input;
+	input = nullptr;
+
+	return command;
 }
 
 void TextEditor::ExecuteCommand(enum Mode command, bool* ifContinue)
@@ -127,7 +234,7 @@ void TextEditor::HandleUserExit(char* input)
 int TextEditor::HandleAppend(char* input, size_t inputSize)
 {
 	fgets(input, static_cast<int>(inputSize), stdin);
-	if (!IsInputSizeValid(input, inputSize))
+	if (!IfInputSizeNotValidClearSTDin(input, inputSize))
 	{
 		printf(">>failure\n");
 		return -1;
@@ -166,7 +273,7 @@ int TextEditor::HandleSaveToFile(char* input, size_t inputSize)
 	printf("\nEnter the filename: ");
 	fgets(input, static_cast<int>(inputSize), stdin);
 
-	if (!IsInputSizeValid(input, inputSize))
+	if (!IfInputSizeNotValidClearSTDin(input, inputSize))
 	{
 		printf(">>failure\n");
 		return -1;
@@ -205,7 +312,7 @@ int TextEditor::HandleLoadFromFile(char* input, size_t inputSize)
 	fgets(input, static_cast<int>(inputSize), stdin);
 	RemoveEndNewLine(input);
 
-	if (input[0] == '0' || !IsInputSizeValid(input, inputSize))
+	if (input[0] == '0' || !IfInputSizeNotValidClearSTDin(input, inputSize))
 	{
 		printf(">>failure\n");
 		return -1;
@@ -214,7 +321,7 @@ int TextEditor::HandleLoadFromFile(char* input, size_t inputSize)
 	printf("\nEnter the filename: ");
 
 	fgets(input, static_cast<int>(inputSize), stdin);
-	if (!IsInputSizeValid(input, inputSize))
+	if (!IfInputSizeNotValidClearSTDin(input, inputSize))
 	{
 		printf(">>failure\n");
 		return -1;
@@ -253,7 +360,7 @@ int TextEditor::HandleInsert(char* input, size_t inputSize)
 
 	printf("String to insert at %zd|%zd: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, static_cast<int>(inputSize), stdin);
-	if (!IsInputSizeValid(input, inputSize))
+	if (!IfInputSizeNotValidClearSTDin(input, inputSize))
 	{
 		printf(">>failure\n");
 		return -1;
@@ -278,7 +385,7 @@ int TextEditor::HandleInsertReplace(char* input, size_t inputSize)
 
 	printf("Enter the message to insert at position %zd|%zd: ", curCursor.GetRow(), curCursor.GetColumn());
 	fgets(input, static_cast<int>(inputSize), stdin);
-	if (!IsInputSizeValid(input, inputSize))
+	if (!IfInputSizeNotValidClearSTDin(input, inputSize))
 	{
 		printf(">>failure\n");
 		return -1;
@@ -329,7 +436,7 @@ int TextEditor::HandleSearch(char* input, size_t inputSize)
 {
 	printf("Enter the substring to look for: ");
 	fgets(input, static_cast<int>(inputSize), stdin);
-	if (!IsInputSizeValid(input, inputSize))
+	if (!IfInputSizeNotValidClearSTDin(input, inputSize))
 	{
 		printf(">>failure\n");
 		return -1;
@@ -435,7 +542,7 @@ int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
 {
     int	 key = 0;
 	char ifEncrypt;
-	if (!ifLibLoaded)
+	if (!ifLibLoaded)  // use handle instead
 	{
 		try
 		{
@@ -452,7 +559,7 @@ int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
 
     printf("Enter the filepath for FROM file: ");
     fgets(input, static_cast<int>(inputSize), stdin);
-    if (!IsInputSizeValid(input, inputSize))
+    if (!IfInputSizeNotValidClearSTDin(input, inputSize))
     {
         system("cls");
         printf(">>failure\n");
@@ -464,7 +571,7 @@ int TextEditor::HandleCipherTxtAction(char* input, size_t inputSize)
 
     printf("Enter the filepath for OUT file: ");
     fgets(input, static_cast<int>(inputSize), stdin);
-    if (!IsInputSizeValid(input, inputSize))
+    if (!IfInputSizeNotValidClearSTDin(input, inputSize))
     {
         system("cls");
         printf(">>failure\n");
