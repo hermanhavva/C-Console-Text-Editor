@@ -6,7 +6,7 @@
 #include "CaesarCipher.h"
 #include "Buffer.h"
 #include "string"
-
+#include "CommandEnum.h"
 
 class TextEditor
 {
@@ -14,6 +14,7 @@ public:
 
 	TextEditor(const size_t rowNum, const size_t rowLength, const char* pathToDll);
 	~TextEditor();
+    enum Mode GetUserCommand();
     void ExecuteCommand(enum Mode command, bool* ifContinue);
     void PrintMainMenu() const;
     void CloseFile(FILE*);
